@@ -1,0 +1,16 @@
+{
+  "name": "control-gastos",
+  "version": "1.0.0",
+  "description": "Web de control de gastos con CRUD sobre una API Express y datos en memoria (sin base de datos)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "express": "^5.2.1"
+  }
+}

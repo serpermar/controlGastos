@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Gastos & Finanzas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <header class="cabecera">
+        <h1>Gestión de Gastos</h1>
+        <p class="subtitulo">Panel de control de presupuesto y finanzas personales</p>
+    </header>
+
+    <main class="contenedor">
+
+        <!-- Panel de resumen financiero -->
+        <section class="panel resumen" aria-label="Resumen financiero">
+            <div class="tarjeta-resumen">
+                <span class="etiqueta">Gasto Total</span>
+                <span class="valor" id="resumenTotal">--</span>
+                <span class="detalle" id="resumenCantidad">0 transacciones</span>
+            </div>
+            <div class="tarjeta-resumen">
+                <span class="etiqueta">Gasto Promedio</span>
+                <span class="valor" id="resumenPromedio">--</span>
+                <span class="detalle">por transacción</span>
+            </div>
+            <div class="tarjeta-resumen">
+                <span class="etiqueta">Mayor Imputación</span>
+                <span class="valor" id="resumenMaximo">--</span>
+                <span class="detalle" id="resumenMaximoConcepto">&nbsp;</span>
+            </div>
+            <div class="tarjeta-resumen presupuesto">
+                <span class="etiqueta">Presupuesto Mensual</span>
+                <span class="valor" id="resumenPresupuesto">--</span>
+                <div class="barra">
+                    <div class="barra-relleno" id="barraPresupuesto"></div>
+                </div>
+                <span class="detalle" id="resumenRestante">&nbsp;</span>
+
+                <form class="formulario-presupuesto" id="formularioPresupuesto">
+                    <label for="inputPresupuesto">Ajustar límite (€)</label>
+                    <div class="fila">
+                        <input type="number" id="inputPresupuesto" min="1" step="0.01" required placeholder="1200">
+                        <button type="submit" class="btn btn-primario" id="btnPresupuesto">Guardar</button>
+                    </div>
+                    <p class="mensaje-error" id="errorPresupuesto" hidden></p>
+                </form>
+            </div>
+        </section>
+
+        <div class="columnas">
+
+            <!-- Formulario de alta / edición -->
+            <section class="panel" aria-label="Formulario de gastos">
+                <h2 id="tituloFormulario">
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M12 5v14m-7-7h14"></path>
+                    </svg>
+                    Nuevo Gasto
+                </h2>
+
+                <form id="formularioGasto" novalidate>
+                    <input type="hidden" id="gastoId">
+
+                    <div class="campo">
+                        <label for="concepto">Concepto / Comercio</label>
+                        <input type="text" id="concepto" name="concepto" maxlength="80" required
+                            placeholder="Ej. Supermercado, Factura Luz...">
+                    </div>
+
+                    <div class="fila">
+                        <div class="campo">
+                            <label for="importe">Importe (€)</label>
+                            <input type="number" id="importe" name="importe" step="0.01" min="0.01" required
+                                placeholder="0.00">
+                        </div>
+
+                        <div class="campo">
+                            <label for="fecha">Fecha</label>
+                            <input type="date" id="fecha" name="fecha" required>
+                        </div>
+                    </div>
+
+                    <div class="campo">
+                        <label for="categoria">Categoría</label>
+                        <select id="categoria" name="categoria" required></select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="metodoPago">Método de pago</label>
+                        <select id="metodoPago" name="metodoPago" required></select>
+                    </div>
+
+                    <div class="campo">
+                        <label for="notas">Notas / Observaciones</label>
+                        <textarea id="notas" name="notas" rows="2" maxlength="140"
+                            placeholder="Detalles adicionales (opcional)"></textarea>
+                    </div>
+
+                    <p class="mensaje-error" id="mensajeFormulario" hidden></p>
+
+                    <div class="acciones">
+                        <button type="submit" class="btn btn-primario" id="btnGuardar">Registrar Gasto</button>
+                        <button type="button" class="btn btn-secundario" id="btnCancelar" hidden>Cancelar</button>
+                    </div>
+                </form>
+
+                <hr class="separador">
+
+                <!-- Categorías personalizadas -->
+                <h2>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M7 7h.01M7 11h.01M7 15h.01M11 7h8M11 11h8M11 15h8"></path>
+                    </svg>
+                    Categorías
+                </h2>
+                <form class="nueva-categoria" id="formularioCategoria">
+                    <input type="text" id="nombreCategoria" maxlength="40" placeholder="Nueva categoría">
+                    <button type="submit" class="btn btn-secundario">Añadir</button>
+                </form>
+                <p class="mensaje-error" id="errorCategoria" hidden></p>
+                <ul class="chips" id="listaCategoriasForm"></ul>
+            </section>
+
+            <!-- Listado con filtros -->
+            <section class="panel" aria-label="Listado de gastos">
+                <h2>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2">
+                        </path>
+                    </svg>
+                    Historial de Transacciones
+                </h2>
+
+                <div class="filtros">
+                    <input type="search" id="filtroTexto" placeholder="Buscar por concepto o notas...">
+
+                    <select id="filtroCategoria">
+                        <option value="">Todas las categorías</option>
+                    </select>
+
+                    <input type="month" id="filtroMes" title="Filtrar por mes">
+
+                    <select id="filtroOrden">
+                        <option value="fecha">Más recientes</option>
+                        <option value="importe">Mayor importe</option>
+                    </select>
+
+                    <select id="filtroLimite" title="Gastos por página">
+                        <option value="10">10 por pág.</option>
+                        <option value="25">25 por pág.</option>
+                        <option value="50">50 por pág.</option>
+                    </select>
+
+                    <button type="button" class="btn btn-secundario" id="btnLimpiar">Limpiar filtros</button>
+                </div>
+
+                <div class="barra-herramientas">
+                    <button type="button" class="btn btn-secundario" id="btnExportarCsv">Exportar CSV</button>
+                    <button type="button" class="btn btn-secundario" id="btnExportarJson">Exportar JSON</button>
+                    <button type="button" class="btn btn-secundario" id="btnImportar">Importar CSV</button>
+                    <input type="file" id="archivoCsv" accept=".csv,text/csv" hidden>
+                    <button type="button" class="btn btn-peligro" id="btnVaciar">Vaciar todo</button>
+                </div>
+
+                <!-- Confirmación de borrado masivo -->
+                <div class="confirmacion" id="confirmacionVaciar" hidden>
+                    <span id="textoConfirmacion">Se borrarán TODOS los gastos de la base de datos.</span>
+                    <div class="acciones">
+                        <button type="button" class="btn btn-peligro" id="btnVaciarConfirmar">Confirmar borrado</button>
+                        <button type="button" class="btn btn-secundario" id="btnVaciarCancelar">Cancelar</button>
+                    </div>
+                </div>
+
+                <div class="tabla-envoltorio">
+                    <table class="tabla" id="tablaGastos">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Concepto</th>
+                                <th>Categoría</th>
+                                <th>Pago</th>
+                                <th class="derecha">Importe</th>
+                                <th class="acciones-col">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cuerpoTabla"></tbody>
+                    </table>
+                </div>
+
+                <p class="vacio" id="mensajeVacio" hidden>No hay registros financieros que mostrar.</p>
+
+                <!-- Paginación -->
+                <div class="paginacion" id="paginacion" hidden>
+                    <span class="paginacion-info" id="paginacionInfo">--</span>
+                    <div class="paginacion-botones">
+                        <button type="button" class="btn btn-secundario" id="btnPaginaAnterior">Anterior</button>
+                        <button type="button" class="btn btn-secundario" id="btnPaginaSiguiente">Siguiente</button>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Gráficos Analíticos -->
+        <div class="graficos">
+            <section class="panel" aria-label="Gráfico de categorías">
+                <h2>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                    </svg>
+                    Distribución por Categoría
+                </h2>
+                <div class="lienzo">
+                    <canvas id="graficoCategorias" aria-label="Gráfico de tarta por categoría"></canvas>
+                    <p class="sin-datos" id="graficoVacioCategorias">Sin información para representar.</p>
+                </div>
+            </section>
+
+            <section class="panel" aria-label="Evolución mensual">
+                <h2>
+                    <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Evolución Mensual
+                </h2>
+                <div class="lienzo">
+                    <canvas id="graficoMeses" aria-label="Gráfico de barras por mes"></canvas>
+                    <p class="sin-datos" id="graficoVacioMeses">Sin información para representar.</p>
+                </div>
+            </section>
+        </div>
+
+        <p class="aviso" id="mensajeGlobal" role="status" aria-live="polite" hidden></p>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="script.js"></script>
+</body>
+
+</html>
