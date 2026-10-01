@@ -17,17 +17,19 @@ frontend, sin paso de compilación. Se clona, se ejecuta y funciona.
 
 | | |
 |---|---|
-| 💸 **CRUD de gastos** | Alta, edición, borrado individual y vaciado masivo con doble confirmación |
+| 💸 **CRUD de gastos** | Alta, edición y borrado desde modales propios, más vaciado masivo con doble confirmación |
 | 🗂️ **Categorías propias** | Añade y borra categorías; las 9 por defecto están protegidas |
 | 📊 **Resumen financiero** | Gasto total, gasto promedio, mayor imputación y presupuesto restante |
 | 🎯 **Presupuesto mensual** | Límite por mes con barra de progreso y nota si es un límite propio |
-| 🔎 **Filtros combinables** | Texto, categoría, mes, rango de fechas, orden y tamaño de página |
+| 🔎 **Filtros combinables** | Texto y categoría, con periodo de **mes o rango** (excluyentes), orden y tamaño de página |
+| 🏷️ **Filtros activos** | Cada filtro puesto sale como etiqueta y se quita por separado, sin vaciar el resto |
 | 📄 **Paginación** | 10 / 25 / 50 por página, con total y navegación |
-| ⬇️ **Exportar CSV / JSON** | Exporta exactamente lo que hay filtrado en pantalla, sin paginar |
+| ⬇️ **Exportar CSV / JSON** | Un único botón con elección de formato; descarga lo que hay filtrado, sin paginar |
 | ⬆️ **Importar CSV** | Acepta CSV en español (`33,80`) o inglés (`33.80`), detecta duplicados y crea categorías nuevas |
 | 🥧 **Gráficos** | Distribución por categoría (tarta) y evolución mensual (barras) con Chart.js |
 | 🌗 **Tema claro / oscuro** | Toggle con preferencia guardada en `localStorage` |
 | 💶 **Métodos de pago** | Efectivo, Tarjeta, Transferencia y Domiciliación |
+| 🖥️ **Interfaz centrada** | Todo el texto, los botones y los bloques salen centrados, en escritorio y en móvil |
 | 🛟 **Recuperación ante fallos** | Copias de seguridad, guardado atómico y apartado de ficheros corruptos |
 
 ---
@@ -73,6 +75,13 @@ PORT=3001 npm start
 Todas las rutas devuelven JSON. Los filtros de `GET /api/gastos` y `GET /api/resumen`
 aceptan `texto`, `categoria`, `mes` (`YYYY-MM`), `desde`, `hasta`, `orden`
 (`fecha` \| `importe`), `page` y `limit`.
+
+> **Ojo con el periodo.** El API sigue aplicando `mes`, `desde` y `hasta` de forma
+> independiente: si se envían varios a la vez se combinan con AND, y el resultado es
+> un recorte que no se anuncia. Por eso la interfaz es la que garantiza que solo
+> salga uno — el cliente elige entre el modo *Mes* y el modo *Rango* y envía
+> únicamente los parámetros de ese modo. Es una decisión de diseño del frontend, no
+> una restricción del servidor.
 
 **Gastos**
 
@@ -120,6 +129,64 @@ controlGastos/
 │   └── datos.json     Tus gastos (no se versiona)
 └── package.json
 ```
+
+---
+
+## 🖥️ Interfaz
+
+### Modales de edición y borrado
+
+Editar y borrar ya no pasan por el formulario lateral ni por `window.confirm`:
+
+- `#modalEditar` — `<dialog>` nativo con el gasto precargado. Guarda con
+  `PUT /api/gastos/:id`. Escape o la × cierran sin tocar nada.
+- `#modalBorrar` — repite importe, fecha, categoría y pago, y borra con
+  `DELETE /api/gastos/:id` al confirmar.
+- El formulario lateral queda **solo para altas**. Antes se reutilizaba para
+  editar, lo que obligaba a esconder el botón de guardar y a enseñar un
+  "Cancelar" según el estado; al separarlo, la ruta de alta no tiene ramas que
+  puedan desincronizarse.
+
+`<dialog>` evita escribir a mano la capa de fondo, el foco y el cierre con
+Escape: el `::backdrop` y el foco atrapado vienen en el estándar.
+
+### Barra de filtros
+
+Reorganizada en dos grupos ("¿Qué buscas?" y "¿Qué periodo?"), con etiquetas
+visibles en vez de depender de `title`, que no se lee de forma fiable:
+
+- Selector **Mes / Rango** excluyente: solo se envía un tipo de periodo, y al
+  cambiar de modo se limpia el filtro del otro.
+- **Etiquetas de filtros activos**: cada filtro puesto aparece como *chip* con su
+  ×, para quitarlo sin tocar el resto.
+- Al cambiar un filtro se reinicia a la página 1 y se repinta la tabla.
+
+### Barra de vista y acciones
+
+Separada en dos grupos con nombre —"Ver" (orden y tamaño de página) y las acciones
+de datos— en lugar de una fila larga y sin títulos. Exportar pasa a ser un
+desplegable con CSV y JSON, que se cierra al elegir, al pulsar fuera o con Escape.
+`Vaciar todo` queda separada por una línea divisoria, para que no quede a un clic
+de distancia de las acciones inofensivas.
+
+### Centrado general
+
+Todo el contenido sale centrado: texto, botones, formularios, tabla y modales. La
+paginación va en columna porque, centrada en fila, el texto y los botones quedaban
+descentrados uno respecto del otro.
+
+Tres detalles que no son obvios y que conviene no deshacer:
+
+- **El texto de los campos hay que centrarlo a mano.** El navegador aplica
+  `text-align: start` a `input`, `select` y `textarea`, y eso gana a la herencia
+  de `body { text-align: center }`.
+- **Las columnas del grid usan `minmax(0, 1fr)`, nunca `1fr`.** `1fr` a secas es
+  `minmax(auto, 1fr)`, y su mínimo es el *min-content* del panel: los inputs nunca
+  bajan de su tamaño intrínseco, el panel no encoge y la página desborda en móvil.
+- **Nada de `flex-grow` en los grupos de filtros.** Si un grupo se estira hasta
+  llenar su caja, se queda sin espacio libre y `justify-content: center` deja de
+  tener efecto: los campos acaban pegados a los bordes. Los grupos miden lo que
+  ocupan y el centrado lo hace la caja padre.
 
 ---
 

@@ -151,6 +151,9 @@ body {
     color: var(--cg-texto);
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    /* Todo el texto sale centrado. Ojo: los campos hay que centrarlos aparte,
+       porque el navegador les pone text-align: start y eso gana a la herencia */
+    text-align: center;
 }
 
 /* --- CABECERA --- */
@@ -276,9 +279,12 @@ body {
     padding: 2rem 1.25rem 4rem;
 }
 
+/* minmax(0,...) y no 1fr a secas: el 1fr normal no baja del min-content, y los
+   inputs nunca se encogen más de su tamaño intrínseco, así que la tarjeta
+   desbordaría la pantalla en móvil */
 .columnas {
     display: grid;
-    grid-template-columns: 360px 1fr;
+    grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
     margin-top: 1.5rem;
@@ -286,7 +292,7 @@ body {
 
 @media (max-width: 960px) {
     .columnas {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -318,19 +324,21 @@ body {
 /* --- PANEL RESUMEN (TARJETAS MONETARIAS) --- */
 .resumen {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.25rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    /* Menos aire que en los demás paneles: aquí lo que manda es la altura */
+    padding: 1.1rem;
 }
 
 @media (max-width: 960px) {
     .resumen {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 
 @media (max-width: 580px) {
     .resumen {
-        grid-template-columns: 1fr;
+        grid-template-columns: minmax(0, 1fr);
     }
 }
 
@@ -338,10 +346,10 @@ body {
     background-color: var(--cg-panel);
     border: 1px solid var(--cg-borde);
     border-radius: var(--radius-md);
-    padding: 1.1rem 1.25rem;
+    padding: 0.6rem 0.8rem;
     display: flex;
     flex-direction: column;
-    gap: 0.25rem;
+    gap: 0.1rem;
     position: relative;
     box-shadow: var(--shadow-sm);
     overflow: hidden;
@@ -371,7 +379,7 @@ body {
 
 .valor {
     font-family: var(--font-cifra);
-    font-size: 1.65rem;
+    font-size: 1.35rem;
     font-weight: 700;
     color: var(--cg-texto);
     letter-spacing: -0.03em;
@@ -384,11 +392,11 @@ body {
 }
 
 .barra {
-    height: 10px;
+    height: 8px;
     background-color: var(--cg-tenue);
     border-radius: 999px;
     overflow: hidden;
-    margin: 0.6rem 0 0.3rem;
+    margin: 0.35rem 0 0.2rem;
 }
 
 .barra-relleno {
@@ -412,7 +420,9 @@ body {
     margin-bottom: 1rem;
     display: flex;
     flex-direction: column;
+    align-items: center;
     gap: 0.35rem;
+    width: 100%;
 }
 
 .campo label {
@@ -423,7 +433,7 @@ body {
 
 .fila {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 0.85rem;
 }
 
@@ -438,6 +448,9 @@ textarea {
     font-size: 0.92rem;
     color: var(--cg-texto);
     background-color: var(--cg-panel);
+    /* El navegador pone text-align: start a los campos, y esa regla gana a la
+       herencia de body. Hay que fijarlo aquí para que también salga centrado */
+    text-align: center;
     transition: all 0.2s ease;
 }
 
@@ -469,8 +482,9 @@ textarea:focus {
 /* --- BOTONES --- */
 .acciones {
     display: flex;
-    gap: 0.6rem;
     flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
 }
 
 .btn {
@@ -551,36 +565,274 @@ textarea:focus {
     border-color: var(--cg-peligro);
 }
 
-/* --- FILTROS & BARRA DE HERRAMIENTAS --- */
+/* --- FILTROS --- */
 .filtros {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.6rem;
-    margin-bottom: 1.2rem;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.9rem;
+    margin-bottom: 1rem;
     background-color: var(--cg-fondo);
     padding: 0.85rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--cg-borde);
 }
 
-.filtros input,
-.filtros select {
-    flex: 1 1 150px;
+/* Cada grupo mantiene sus campos juntos en vez de repartirlos por la fila.
+   Sin flex-grow a propósito: si el grupo se estira hasta llenar la caja, el
+   espacio libre es cero y justify-content: center deja de hacer nada, y los
+   campos quedan pegados a los bordes. Así el grupo mide lo que ocupa y el
+   centrado lo hace la caja padre */
+.grupo-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 0.6rem;
+    flex: 0 1 auto;
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    flex: 0 1 180px;
+    min-width: 0;
+}
+
+.campo-filtro label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cg-texto-suave);
+}
+
+.campo-filtro input,
+.campo-filtro select {
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
     background-color: var(--cg-panel);
 }
 
-.barra-herramientas {
+/* El buscador es algo más ancho: es el campo que más se usa */
+.campo-filtro.crece {
+    flex: 0 1 250px;
+}
+
+/* Mes / Desde / Hasta: campos pequeños, uno al lado del otro */
+.campo-filtro.compacto {
+    flex: 0 1 145px;
+}
+
+.acciones-filtros {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    flex: 0 0 auto;
+}
+
+/* --- SELECTOR SEGMENTADO (Mes | Rango, 10 | 25 | 50) --- */
+.segmentado {
+    display: inline-flex;
+    align-items: stretch;
+    gap: 2px;
+    padding: 3px;
+    background-color: var(--cg-tenue);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-sm);
+}
+
+.segmentado-titulo {
+    display: flex;
+    align-items: center;
+    padding: 0 0.5rem 0 0.35rem;
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cg-texto-suave);
+}
+
+.segmentado button {
+    padding: 0.4rem 0.7rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: var(--cg-texto-suave);
+    cursor: pointer;
+    transition: all 0.15s ease;
+}
+
+.segmentado button:hover {
+    color: var(--cg-texto);
+}
+
+.segmentado button[aria-pressed='true'] {
+    background-color: var(--cg-primary);
+    color: var(--cg-inverso);
+    box-shadow: var(--shadow-sm);
+}
+
+/* --- FILTROS ACTIVOS (etiquetas con su ×) --- */
+.filtros-activos {
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
     gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+.filtros-activos-titulo {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cg-texto-suave);
+}
+
+.chips-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.chip-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.4rem 0.2rem 0.65rem;
+    background-color: var(--cg-acento-tenue);
+    color: var(--cg-texto);
+    border: 1px solid var(--cg-acento-borde);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.chip-filtro button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.1rem;
+    height: 1.1rem;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--cg-texto-suave);
+    font-size: 0.95rem;
+    line-height: 1;
+}
+
+.chip-filtro button:hover {
+    background-color: var(--cg-peligro-tenue);
+    color: var(--cg-peligro);
+}
+
+/* --- BARRA DE VISTA Y ACCIONES --- */
+.barra-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem 1.5rem;
     margin-bottom: 1rem;
     padding-bottom: 1rem;
     border-bottom: 1px solid var(--cg-borde);
 }
 
-.barra-herramientas .btn {
+.grupo-vista,
+.grupo-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+/* "Ver" y el título del segmentado: el nombre de cada grupo */
+.grupo-titulo {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--cg-texto-suave);
+    align-self: center;
+}
+
+.barra-acciones .btn {
     padding: 0.45rem 0.8rem;
     font-size: 0.82rem;
+}
+
+/* Línea vertical que separa "Vaciar todo" de las acciones inofensivas */
+.separador-acciones {
+    width: 1px;
+    align-self: stretch;
+    background-color: var(--cg-borde);
+}
+
+/* --- MENÚ DESPLEGABLE DE EXPORTAR --- */
+.menu-exportar {
+    position: relative;
+}
+
+.menu-exportar > summary {
+    list-style: none;
+    cursor: pointer;
+}
+
+.menu-exportar > summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu-exportar > summary::after {
+    content: "▾";
+    font-size: 0.7rem;
+    opacity: 0.7;
+}
+
+.menu-lista {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 50%;
+    transform: translateX(-50%);
+    /* min-width evita que el texto se parta en dos líneas raras */
+    min-width: 190px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0.3rem;
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-borde-fuerte);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow-lg);
+    z-index: 60;
+}
+
+.menu-lista button {
+    padding: 0.5rem 0.7rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    font-family: inherit;
+    font-size: 0.84rem;
+    font-weight: 500;
+    color: var(--cg-texto);
+    text-align: center;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+.menu-lista button:hover {
+    background-color: var(--cg-tenue);
 }
 
 /* --- TABLA DE GASTOS --- */
@@ -600,7 +852,7 @@ textarea:focus {
 .tabla thead th {
     background-color: var(--cg-fondo);
     color: var(--cg-texto-suave);
-    text-align: left;
+    text-align: center;
     padding: 0.75rem 0.9rem;
     font-size: 0.75rem;
     font-weight: 700;
@@ -624,14 +876,8 @@ textarea:focus {
     background-color: var(--cg-fondo);
 }
 
-.derecha {
-    text-align: right;
-}
-
-.acciones-col {
-    text-align: center;
-}
-
+/* Antes había .derecha (importes) y .acciones-col (columna de botones). Con el
+   texto centrado en todo el cuerpo, alinear esas columnas solo descuadraba */
 .importe {
     font-family: var(--font-cifra);
     font-weight: 700;
@@ -688,7 +934,7 @@ textarea:focus {
 }
 
 .formulario-presupuesto .fila {
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.5rem;
 }
 
@@ -715,6 +961,7 @@ textarea:focus {
     list-style: none;
     display: flex;
     flex-wrap: wrap;
+    justify-content: center;
     gap: 0.4rem;
     margin: 0.8rem 0 0;
     padding: 0;
@@ -752,11 +999,14 @@ textarea:focus {
 
 .nueva-categoria {
     display: flex;
+    justify-content: center;
     gap: 0.5rem;
 }
 
 .nueva-categoria input {
     padding: 0.45rem 0.65rem;
+    /* Sin tope, el input crece con el más largo y descuadra la fila */
+    flex: 0 1 220px;
 }
 
 /* --- CONFIRMACIÓN EN DOS PASOS --- */
@@ -764,7 +1014,7 @@ textarea:focus {
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
     gap: 0.6rem;
     margin-bottom: 1rem;
     padding: 0.85rem 1rem;
@@ -777,11 +1027,12 @@ textarea:focus {
 }
 
 /* --- PAGINACIÓN --- */
+/* En columna para que el texto y los botones queden centrados cada uno por su
+   cuenta: en fila, centrado el conjunto, los dos parecían descentrados entre sí */
 .paginacion {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     align-items: center;
-    justify-content: space-between;
     gap: 0.6rem;
     margin-top: 1rem;
     padding-top: 1rem;
@@ -796,6 +1047,7 @@ textarea:focus {
 
 .paginacion-botones {
     display: flex;
+    justify-content: center;
     gap: 0.4rem;
 }
 
@@ -815,7 +1067,8 @@ textarea:focus {
 /* --- AVISO GLOBAL --- */
 .aviso {
     position: fixed;
-    right: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%);
     bottom: 1.5rem;
     margin: 0;
     padding: 0.85rem 1.25rem;
@@ -825,7 +1078,8 @@ textarea:focus {
     font-size: 0.88rem;
     font-weight: 500;
     box-shadow: var(--shadow-lg);
-    max-width: 360px;
+    /* min() evita que en una pantalla estrecha el ancho fijo lo desborde */
+    max-width: min(360px, calc(100vw - 2rem));
     z-index: 100;
     border-left: 4px solid var(--cg-primary);
 }
@@ -834,8 +1088,124 @@ textarea:focus {
     border-left-color: var(--cg-peligro);
 }
 
+/* --- MODALES (editar y borrar) --- */
+.modal {
+    width: min(520px, calc(100vw - 2rem));
+    padding: 0;
+    border: 1px solid var(--cg-borde-fuerte);
+    border-radius: var(--radius-lg);
+    background-color: var(--cg-panel);
+    color: var(--cg-texto);
+    box-shadow: var(--shadow-lg);
+    /* max-height evita que en pantallas bajas el modal se salga de la ventana */
+    max-height: calc(100vh - 3rem);
+    overflow: auto;
+}
+
+/* El fondo se oscurece con ::backdrop, que es parte del estándar: no hay que
+   crear a mano una capa aparte que escuche los clics de fuera */
+.modal::backdrop {
+    background-color: rgba(15, 23, 42, 0.55);
+    backdrop-filter: blur(2px);
+}
+
+.modal-cabecera {
+    position: relative;
+    display: flex;
+    justify-content: center;
+    padding: 1.1rem 3rem;
+    border-bottom: 1px solid var(--cg-borde);
+}
+
+.modal-cabecera h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+}
+
+/* La × se ancla al borde y el título lleva hueco en los lados: si el título se
+   centrara en el hueco que deja la ×, quedaría descentrado */
+.modal-cerrar {
+    position: absolute;
+    top: 50%;
+    right: 0.9rem;
+    transform: translateY(-50%);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.9rem;
+    height: 1.9rem;
+    background: none;
+    border: none;
+    border-radius: 50%;
+    cursor: pointer;
+    color: var(--cg-texto-suave);
+    font-size: 1.3rem;
+    line-height: 1;
+    transition: all 0.15s ease;
+}
+
+.modal-cerrar:hover {
+    background-color: var(--cg-tenue);
+    color: var(--cg-texto);
+}
+
+.modal-cuerpo {
+    padding: 1.25rem 1.5rem 0.5rem;
+}
+
+/* El .campo de dentro ya pone sus labels centrados; el último no deja hueco */
+.modal-cuerpo .campo:last-child {
+    margin-bottom: 0.5rem;
+}
+
+.modal-texto {
+    margin: 0 0 1rem;
+    font-size: 0.95rem;
+    font-weight: 500;
+}
+
+.modal-datos {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 0.35rem 1rem;
+    margin: 0;
+    padding: 0.85rem 1rem;
+    background-color: var(--cg-fondo);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+}
+
+.modal-datos dt {
+    font-weight: 700;
+    color: var(--cg-texto-suave);
+}
+
+.modal-datos dd {
+    margin: 0;
+    font-weight: 600;
+}
+
+.modal-pie {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    padding: 1rem 1.5rem 1.25rem;
+}
+
 .separador {
     border: none;
     border-top: 1px solid var(--cg-borde);
     margin: 1.5rem 0;
+}
+
+/* En pantallas estrechas los dos campos de una .fila se apilan, porque a dos
+   columnas no les cabe un importe legible */
+@media (max-width: 480px) {
+    .fila {
+        grid-template-columns: minmax(0, 1fr);
+    }
 }

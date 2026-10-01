@@ -48,7 +48,7 @@
                 <span class="valor" id="resumenMaximo">--</span>
                 <span class="detalle" id="resumenMaximoConcepto">&nbsp;</span>
             </div>
-<div class="tarjeta-resumen presupuesto">
+                <div class="tarjeta-resumen presupuesto">
                     <span class="etiqueta">Presupuesto Mensual</span>
                     <span class="valor" id="resumenPresupuesto">--</span>
                     <div class="barra">
@@ -70,18 +70,18 @@
 
         <div class="columnas">
 
-            <!-- Formulario de alta / edición -->
+            <!-- Formulario de alta. Editar y borrar se hacen en sus propios
+                 modales (#modalEditar y #modalBorrar), así que aquí no hace
+                 falta campo oculto de id ni botón de cancelar -->
             <section class="panel" aria-label="Formulario de gastos">
                 <h2>
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M12 5v14m-7-7h14"></path>
                     </svg>
-                    <span id="tituloFormulario">Nuevo Gasto</span>
+                    Nuevo Gasto
                 </h2>
 
                 <form id="formularioGasto" novalidate>
-                    <input type="hidden" id="gastoId">
-
                     <div class="campo">
                         <label for="concepto">Concepto / Comercio</label>
                         <input type="text" id="concepto" name="concepto" maxlength="80" required
@@ -121,7 +121,6 @@
 
                     <div class="acciones">
                         <button type="submit" class="btn btn-primario" id="btnGuardar">Registrar Gasto</button>
-                        <button type="button" class="btn btn-secundario" id="btnCancelar" hidden>Cancelar</button>
                     </div>
                 </form>
 
@@ -154,37 +153,80 @@
                 </h2>
 
                 <div class="filtros">
-                    <input type="search" id="filtroTexto" placeholder="Buscar por concepto o notas...">
+                    <div class="grupo-filtros">
+                        <div class="campo-filtro crece">
+                            <label for="filtroTexto">Buscar</label>
+                            <input type="search" id="filtroTexto" placeholder="Concepto o notas...">
+                        </div>
+                        <div class="campo-filtro">
+                            <label for="filtroCategoria">Categoría</label>
+                            <select id="filtroCategoria">
+                                <option value="">Todas las categorías</option>
+                            </select>
+                        </div>
+                    </div>
 
-                    <select id="filtroCategoria">
-                        <option value="">Todas las categorías</option>
-                    </select>
+                    <div class="grupo-filtros periodo">
+                        <div class="segmentado" role="group" aria-label="Tipo de periodo">
+                            <button type="button" id="modoMes" aria-pressed="true">Mes</button>
+                            <button type="button" id="modoRango" aria-pressed="false">Rango</button>
+                        </div>
+                        <div class="campo-filtro compacto modo-periodo" id="campoMes">
+                            <label for="filtroMes">Mes</label>
+                            <input type="month" id="filtroMes">
+                        </div>
+                        <div class="campo-filtro compacto modo-periodo" id="campoDesde" hidden>
+                            <label for="filtroDesde">Desde</label>
+                            <input type="date" id="filtroDesde">
+                        </div>
+                        <div class="campo-filtro compacto modo-periodo" id="campoHasta" hidden>
+                            <label for="filtroHasta">Hasta</label>
+                            <input type="date" id="filtroHasta">
+                        </div>
+                    </div>
 
-                    <input type="month" id="filtroMes" title="Filtrar por mes">
-
-                    <input type="date" id="filtroDesde" title="Desde esta fecha">
-                    <input type="date" id="filtroHasta" title="Hasta esta fecha">
-
-                    <select id="filtroOrden">
-                        <option value="fecha">Más recientes</option>
-                        <option value="importe">Mayor importe</option>
-                    </select>
-
-                    <select id="filtroLimite" title="Gastos por página">
-                        <option value="10">10 por pág.</option>
-                        <option value="25">25 por pág.</option>
-                        <option value="50">50 por pág.</option>
-                    </select>
-
-                    <button type="button" class="btn btn-secundario" id="btnLimpiar">Limpiar filtros</button>
+                    <div class="acciones-filtros">
+                        <button type="button" class="btn btn-secundario" id="btnLimpiar">Limpiar filtros</button>
+                    </div>
                 </div>
 
-                <div class="barra-herramientas">
-                    <button type="button" class="btn btn-secundario" id="btnExportarCsv">Exportar CSV</button>
-                    <button type="button" class="btn btn-secundario" id="btnExportarJson">Exportar JSON</button>
-                    <button type="button" class="btn btn-secundario" id="btnImportar">Importar CSV</button>
-                    <input type="file" id="archivoCsv" accept=".csv,text/csv" hidden>
-                    <button type="button" class="btn btn-peligro" id="btnVaciar">Vaciar todo</button>
+                <!-- Cada filtro puesto se muestra aquí y se quita por separado -->
+                <div class="filtros-activos" id="filtrosActivos" hidden>
+                    <span class="filtros-activos-titulo">Filtros activos</span>
+                    <div class="chips-filtros" id="chipsFiltros"></div>
+                </div>
+
+                <div class="barra-acciones">
+                    <div class="grupo-vista">
+                        <span class="grupo-titulo">Ver</span>
+                        <div class="campo-filtro compacto">
+                            <label for="filtroOrden">Orden</label>
+                            <select id="filtroOrden">
+                                <option value="fecha">Más recientes</option>
+                                <option value="importe">Mayor importe</option>
+                            </select>
+                        </div>
+                        <div class="segmentado" id="selectorLimite" role="group" aria-label="Gastos por página">
+                            <span class="segmentado-titulo">Por página</span>
+                            <button type="button" data-limite="10" aria-pressed="true">10</button>
+                            <button type="button" data-limite="25" aria-pressed="false">25</button>
+                            <button type="button" data-limite="50" aria-pressed="false">50</button>
+                        </div>
+                    </div>
+
+                    <div class="grupo-acciones">
+                        <details class="menu-exportar" id="menuExportar">
+                            <summary class="btn btn-secundario">Exportar</summary>
+                            <div class="menu-lista">
+                                <button type="button" id="btnExportarCsv">Descargar CSV</button>
+                                <button type="button" id="btnExportarJson">Descargar JSON</button>
+                            </div>
+                        </details>
+                        <button type="button" class="btn btn-secundario" id="btnImportar">Importar CSV</button>
+                        <input type="file" id="archivoCsv" accept=".csv,text/csv" hidden>
+                        <span class="separador-acciones" aria-hidden="true"></span>
+                        <button type="button" class="btn btn-peligro" id="btnVaciar">Vaciar todo</button>
+                    </div>
                 </div>
 
                 <!-- Confirmación de borrado masivo -->
@@ -204,8 +246,8 @@
                                 <th>Concepto</th>
                                 <th>Categoría</th>
                                 <th>Pago</th>
-                                <th class="derecha">Importe</th>
-                                <th class="acciones-col">Acciones</th>
+                                <th>Importe</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody id="cuerpoTabla"></tbody>
@@ -256,6 +298,78 @@
 
         <p class="aviso" id="mensajeGlobal" role="status" aria-live="polite" hidden></p>
     </main>
+
+    <!-- Modal de edición. <dialog> nativo: cierra solo con Escape, hace foco
+         trampa dentro y el navegador gestiona el fondo sin capa propia -->
+    <dialog class="modal" id="modalEditar" aria-labelledby="tituloModalEditar">
+        <form id="formularioModalEditar" novalidate>
+            <input type="hidden" id="idEdicion">
+
+            <div class="modal-cabecera">
+                <h2 id="tituloModalEditar">Editar gasto</h2>
+                <button type="button" class="modal-cerrar" data-cerrar="modalEditar" aria-label="Cerrar">&times;</button>
+            </div>
+
+            <div class="modal-cuerpo">
+                <p class="mensaje-error" id="mensajeModalEditar" hidden></p>
+
+                <div class="campo">
+                    <label for="editConcepto">Concepto / Comercio</label>
+                    <input type="text" id="editConcepto" name="concepto" maxlength="80" required>
+                </div>
+
+                <div class="fila">
+                    <div class="campo">
+                        <label for="editImporte">Importe (€)</label>
+                        <input type="number" id="editImporte" name="importe" step="0.01" min="0" required>
+                    </div>
+                    <div class="campo">
+                        <label for="editFecha">Fecha</label>
+                        <input type="date" id="editFecha" name="fecha" required>
+                    </div>
+                </div>
+
+                <div class="campo">
+                    <label for="editCategoria">Categoría</label>
+                    <select id="editCategoria" name="categoria" required></select>
+                </div>
+
+                <div class="campo">
+                    <label for="editMetodoPago">Método de pago</label>
+                    <select id="editMetodoPago" name="metodoPago" required></select>
+                </div>
+
+                <div class="campo">
+                    <label for="editNotas">Notas / Observaciones</label>
+                    <textarea id="editNotas" name="notas" rows="2" maxlength="140"></textarea>
+                </div>
+            </div>
+
+            <div class="modal-pie">
+                <button type="button" class="btn btn-secundario" data-cerrar="modalEditar">Cancelar</button>
+                <button type="submit" class="btn btn-primario" id="btnGuardarEdicion">Guardar cambios</button>
+            </div>
+        </form>
+    </dialog>
+
+    <!-- Modal de borrado -->
+    <dialog class="modal" id="modalBorrar" aria-labelledby="tituloModalBorrar">
+        <div class="modal-cabecera">
+            <h2 id="tituloModalBorrar">Borrar gasto</h2>
+            <button type="button" class="modal-cerrar" data-cerrar="modalBorrar" aria-label="Cerrar">&times;</button>
+        </div>
+
+        <div class="modal-cuerpo">
+            <p id="textoBorrar" class="modal-texto">Esta acción no se puede deshacer.</p>
+            <dl class="modal-datos" id="datosBorrar"></dl>
+            <p class="mensaje-error" id="mensajeModalBorrar" hidden></p>
+        </div>
+
+        <div class="modal-pie">
+            <button type="button" class="btn btn-secundario" data-cerrar="modalBorrar">Cancelar</button>
+            <button type="button" class="btn btn-peligro" id="btnConfirmarBorrar">Sí, borrar</button>
+        </div>
+    </dialog>
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
     <script src="script.js"></script>

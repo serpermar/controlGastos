@@ -1,6 +1,5 @@
 // --- Referencias al DOM ---
 const formulario = document.getElementById('formularioGasto');
-const campoId = document.getElementById('gastoId');
 const campoConcepto = document.getElementById('concepto');
 const campoImporte = document.getElementById('importe');
 const campoFecha = document.getElementById('fecha');
@@ -11,9 +10,7 @@ const campoNotas = document.getElementById('notas');
 const mensajeFormulario = document.getElementById('mensajeFormulario');
 const mensajeVacio = document.getElementById('mensajeVacio');
 const mensajeGlobal = document.getElementById('mensajeGlobal');
-const tituloFormulario = document.getElementById('tituloFormulario');
 const btnGuardar = document.getElementById('btnGuardar');
-const btnCancelar = document.getElementById('btnCancelar');
 const cuerpoTabla = document.getElementById('cuerpoTabla');
 const tablaGastos = document.getElementById('tablaGastos');
 
@@ -23,14 +20,24 @@ const filtroMes = document.getElementById('filtroMes');
 const filtroDesde = document.getElementById('filtroDesde');
 const filtroHasta = document.getElementById('filtroHasta');
 const filtroOrden = document.getElementById('filtroOrden');
-const filtroLimite = document.getElementById('filtroLimite');
 const btnLimpiar = document.getElementById('btnLimpiar');
+
+const modoMes = document.getElementById('modoMes');
+const modoRango = document.getElementById('modoRango');
+const campoMes = document.getElementById('campoMes');
+const campoDesde = document.getElementById('campoDesde');
+const campoHasta = document.getElementById('campoHasta');
+const filtrosActivos = document.getElementById('filtrosActivos');
+const chipsFiltros = document.getElementById('chipsFiltros');
+
+const selectorLimite = document.getElementById('selectorLimite');
 
 const paginacion = document.getElementById('paginacion');
 const paginacionInfo = document.getElementById('paginacionInfo');
 const btnPaginaAnterior = document.getElementById('btnPaginaAnterior');
 const btnPaginaSiguiente = document.getElementById('btnPaginaSiguiente');
 
+const menuExportar = document.getElementById('menuExportar');
 const btnExportarCsv = document.getElementById('btnExportarCsv');
 const btnExportarJson = document.getElementById('btnExportarJson');
 const btnImportar = document.getElementById('btnImportar');
@@ -40,6 +47,25 @@ const btnVaciar = document.getElementById('btnVaciar');
 const confirmacionVaciar = document.getElementById('confirmacionVaciar');
 const btnVaciarConfirmar = document.getElementById('btnVaciarConfirmar');
 const btnVaciarCancelar = document.getElementById('btnVaciarCancelar');
+
+// Modales de edición y borrado
+const modalEditar = document.getElementById('modalEditar');
+const formularioModalEditar = document.getElementById('formularioModalEditar');
+const idEdicion = document.getElementById('idEdicion');
+const editConcepto = document.getElementById('editConcepto');
+const editImporte = document.getElementById('editImporte');
+const editFecha = document.getElementById('editFecha');
+const editCategoria = document.getElementById('editCategoria');
+const editMetodoPago = document.getElementById('editMetodoPago');
+const editNotas = document.getElementById('editNotas');
+const mensajeModalEditar = document.getElementById('mensajeModalEditar');
+const btnGuardarEdicion = document.getElementById('btnGuardarEdicion');
+
+const modalBorrar = document.getElementById('modalBorrar');
+const textoBorrar = document.getElementById('textoBorrar');
+const datosBorrar = document.getElementById('datosBorrar');
+const mensajeModalBorrar = document.getElementById('mensajeModalBorrar');
+const btnConfirmarBorrar = document.getElementById('btnConfirmarBorrar');
 
 const formularioPresupuesto = document.getElementById('formularioPresupuesto');
 const inputPresupuesto = document.getElementById('inputPresupuesto');
@@ -69,6 +95,12 @@ const estado = {
     secuencia: 0,
     gastos: [],
     categorias: [],
+    // 'mes' o 'rango'. El servidor combina mes + desde/hasta con AND, así que enviar
+    // los dos a la vez daría un recorte que el usuario no ha pedido. Aquí se decide
+    // cuál de los dos es el que cuenta y el otro se esconde
+    modoPeriodo: 'mes',
+    // Gasto pendiente de borrar, guardado al abrir #modalBorrar
+    gastoPendienteBorrar: null,
     // Mes al que pertenece la barra de presupuesto que se está mostrando
     presupuestoMes: null,
     // Último resumen recibido: hace falta para repintar los gráficos al cambiar de tema
@@ -157,9 +189,13 @@ async function cargarCatalogos() {
     const opciones = categorias
         .map(c => `<option value="${escapar(c.nombre)}">${escapar(c.nombre)}</option>`)
         .join('');
+    const opcionesPago = metodos.map(m => `<option value="${escapar(m)}">${escapar(m)}</option>`).join('');
 
     campoCategoria.innerHTML = opciones;
-    campoMetodoPago.innerHTML = metodos.map(m => `<option value="${escapar(m)}">${escapar(m)}</option>`).join('');
+    campoMetodoPago.innerHTML = opcionesPago;
+    // El modal de edición usa los mismos catálogos
+    editCategoria.innerHTML = opciones;
+    editMetodoPago.innerHTML = opcionesPago;
 
     // El filtro de categorías incluye además la opción "todas"
     const filtroActual = filtroCategoria.value;
@@ -254,20 +290,92 @@ formularioPresupuesto.addEventListener('submit', async (evento) => {
 
 // --- Listado, resumen y gráficos ---
 
-// Construye la query de los filtros activos (los vacíos no se envían)
+// Construye la query de los filtros activos (los vacíos no se envía).
+// Del periodo solo sale el modo visible: en modo 'mes' se ignoran desde/hasta, y
+// en modo 'rango' se ignora el mes
 function queryFiltros(conPagina = true) {
     const params = new URLSearchParams();
     if (filtroTexto.value.trim()) params.set('texto', filtroTexto.value.trim());
     if (filtroCategoria.value) params.set('categoria', filtroCategoria.value);
-    if (filtroMes.value) params.set('mes', filtroMes.value);
-    if (filtroDesde.value) params.set('desde', filtroDesde.value);
-    if (filtroHasta.value) params.set('hasta', filtroHasta.value);
+
+    if (estado.modoPeriodo === 'mes') {
+        if (filtroMes.value) params.set('mes', filtroMes.value);
+    } else {
+        if (filtroDesde.value) params.set('desde', filtroDesde.value);
+        if (filtroHasta.value) params.set('hasta', filtroHasta.value);
+    }
+
     params.set('orden', filtroOrden.value);
     if (conPagina) {
         params.set('page', estado.pagina);
         params.set('limit', estado.limite);
     }
     return params.toString();
+}
+
+// Muestra solo el campo del modo elegido. Se toggla 'hidden' y no solo el CSS:
+// un input oculto por display:none sigue validándose y podría colarse en la query
+function aplicarModoPeriodo() {
+    const esMes = estado.modoPeriodo === 'mes';
+
+    modoMes.setAttribute('aria-pressed', String(esMes));
+    modoRango.setAttribute('aria-pressed', String(!esMes));
+
+    campoMes.hidden = !esMes;
+    campoDesde.hidden = esMes;
+    campoHasta.hidden = esMes;
+
+    // Al cambiar de modo se limpia el filtro del otro, para que no reaparezca solo
+    if (esMes) {
+        filtroDesde.value = '';
+        filtroHasta.value = '';
+    } else {
+        filtroMes.value = '';
+    }
+}
+
+// Pinta una etiqueta por cada filtro puesto, con su × para quitarlo suelto
+function pintarFiltrosActivos() {
+    const activos = [];
+
+    if (filtroTexto.value.trim()) {
+        activos.push({ clave: 'texto', texto: `"${filtroTexto.value.trim()}"` });
+    }
+    if (filtroCategoria.value) {
+        activos.push({ clave: 'categoria', texto: filtroCategoria.value });
+    }
+    if (estado.modoPeriodo === 'mes' && filtroMes.value) {
+        activos.push({ clave: 'mes', texto: mesBonito(filtroMes.value) });
+    }
+    if (estado.modoPeriodo === 'rango') {
+        if (filtroDesde.value) {
+            activos.push({ clave: 'desde', texto: `Desde ${fechaBonita(filtroDesde.value)}` });
+        }
+        if (filtroHasta.value) {
+            activos.push({ clave: 'hasta', texto: `Hasta ${fechaBonita(filtroHasta.value)}` });
+        }
+    }
+
+    filtrosActivos.hidden = activos.length === 0;
+    chipsFiltros.innerHTML = activos.map(f => `
+        <span class="chip-filtro">
+            ${escapar(f.texto)}
+            <button type="button" data-quitar="${f.clave}" aria-label="Quitar el filtro ${escapar(f.texto)}">&times;</button>
+        </span>
+    `).join('');
+}
+
+// Quitar un filtro suelto deja intactos los demás
+function quitarFiltro(clave) {
+    switch (clave) {
+        case 'texto': filtroTexto.value = ''; break;
+        case 'categoria': filtroCategoria.value = ''; break;
+        case 'mes': filtroMes.value = ''; break;
+        case 'desde': filtroDesde.value = ''; break;
+        case 'hasta': filtroHasta.value = ''; break;
+    }
+    estado.pagina = 1;
+    recargar();
 }
 
 // Dibuja filas grises mientras la API responde
@@ -301,7 +409,7 @@ function pintarTabla(lista) {
             </td>
             <td><span class="tag">${escapar(g.categoria)}</span></td>
             <td>${escapar(g.metodoPago)}</td>
-            <td class="derecha importe">${euros(g.importe)}</td>
+            <td class="importe">${euros(g.importe)}</td>
             <td>
                 <div class="acciones-fila">
                     <button type="button" class="btn-icono editar" data-id="${g.id}">Editar</button>
@@ -312,6 +420,7 @@ function pintarTabla(lista) {
     `).join('');
 
     mensajeVacio.hidden = lista.length > 0;
+    pintarFiltrosActivos();
 }
 
 // Pinta los controles de paginación según la respuesta del servidor
@@ -565,39 +674,18 @@ async function recargar() {
     }
 }
 
-// --- Formulario: alta y edición ---
+// --- Formulario de alta ---
 
-// Vuelve al modo "nuevo gasto" y limpia el formulario
+// El formulario lateral solo crea. Editar va por su propio modal, así que aquí no
+// hay que alternar entre dos modos ni guardar en qué estado estaba
 function resetearFormulario() {
     formulario.reset();
-    campoId.value = '';
 
     const hoy = new Date();
     campoFecha.value = `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, '0')}-${String(hoy.getDate()).padStart(2, '0')}`;
 
-    tituloFormulario.textContent = 'Nuevo gasto';
-    btnGuardar.textContent = 'Añadir gasto';
     btnGuardar.disabled = false;
-    btnCancelar.hidden = true;
     mensajeFormulario.hidden = true;
-}
-
-// Pasa el formulario a modo edición con los datos del gasto
-function modoEditar(gasto) {
-    campoId.value = gasto.id;
-    campoConcepto.value = gasto.concepto;
-    campoImporte.value = gasto.importe;
-    campoFecha.value = gasto.fecha;
-    campoCategoria.value = gasto.categoria;
-    campoMetodoPago.value = gasto.metodoPago;
-    campoNotas.value = gasto.notas || '';
-
-    tituloFormulario.textContent = `Editando #${gasto.id}`;
-    btnGuardar.textContent = 'Guardar cambios';
-    btnGuardar.disabled = false;
-    btnCancelar.hidden = false;
-    mensajeFormulario.hidden = true;
-    campoConcepto.focus();
 }
 
 formulario.addEventListener('submit', async (evento) => {
@@ -623,16 +711,12 @@ formulario.addEventListener('submit', async (evento) => {
         return;
     }
 
-    const id = campoId.value;
     const textoOriginal = btnGuardar.textContent;
     btnGuardar.disabled = true;
     btnGuardar.textContent = 'Guardando...';
 
     try {
-        const respuesta = id
-            ? await api(`/api/gastos/${id}`, { method: 'PUT', body: JSON.stringify(datos) })
-            : await api('/api/gastos', { method: 'POST', body: JSON.stringify(datos) });
-
+        const respuesta = await api('/api/gastos', { method: 'POST', body: JSON.stringify(datos) });
         avisar(respuesta.mensaje);
         resetearFormulario();
         await recargar();
@@ -644,11 +728,136 @@ formulario.addEventListener('submit', async (evento) => {
     }
 });
 
-btnCancelar.addEventListener('click', resetearFormulario);
+// --- Modales de editar y borrar ---
+
+// Mismo dialogue para abrir y cerrar: showModal() y close()
+function abrirModal(modal) {
+    if (!modal.open) modal.showModal();
+}
+
+function cerrarModal(modal) {
+    if (modal.open) modal.close();
+}
+
+// Los botones de cerrar llevan data-cerrar="idDelModal"
+document.querySelectorAll('[data-cerrar]').forEach(boton => {
+    boton.addEventListener('click', () => {
+        const modal = document.getElementById(boton.dataset.cerrar);
+        if (modal) cerrarModal(modal);
+    });
+});
+
+// Al cerrar #modalBorrar se olvida el gasto pendiente, para que un clic posterior
+// en "Sí, borrar" no pueda borrar lo que se confirmó en una apertura anterior
+modalBorrar.addEventListener('close', () => {
+    estado.gastoPendienteBorrar = null;
+});
+
+function abrirModalEditar(gasto) {
+    idEdicion.value = gasto.id;
+    editConcepto.value = gasto.concepto;
+    editImporte.value = gasto.importe;
+    editFecha.value = gasto.fecha;
+    editCategoria.value = gasto.categoria;
+    editMetodoPago.value = gasto.metodoPago;
+    editNotas.value = gasto.notas || '';
+    mensajeModalEditar.hidden = true;
+    mensajeModalEditar.textContent = '';
+
+    abrirModal(modalEditar);
+    editConcepto.focus();
+}
+
+formularioModalEditar.addEventListener('submit', async (evento) => {
+    evento.preventDefault();
+    mensajeModalEditar.hidden = true;
+
+    if (btnGuardarEdicion.disabled) return;
+
+    if (!formularioModalEditar.checkValidity()) {
+        mensajeModalEditar.textContent = "Revisa los campos obligatorios y el formato del importe y la fecha.";
+        mensajeModalEditar.hidden = false;
+        return;
+    }
+
+    const id = idEdicion.value;
+    const datos = {
+        concepto: editConcepto.value,
+        importe: editImporte.value,
+        fecha: editFecha.value,
+        categoria: editCategoria.value,
+        metodoPago: editMetodoPago.value,
+        notas: editNotas.value
+    };
+
+    btnGuardarEdicion.disabled = true;
+    const textoOriginal = btnGuardarEdicion.textContent;
+    btnGuardarEdicion.textContent = 'Guardando...';
+
+    try {
+        const respuesta = await api(`/api/gastos/${id}`, { method: 'PUT', body: JSON.stringify(datos) });
+        avisar(respuesta.mensaje);
+        cerrarModal(modalEditar);
+        await recargar();
+    } catch (error) {
+        mensajeModalEditar.textContent = error.message;
+        mensajeModalEditar.hidden = false;
+    } finally {
+        btnGuardarEdicion.disabled = false;
+        btnGuardarEdicion.textContent = textoOriginal;
+    }
+});
+
+function abrirModalBorrar(gasto) {
+    estado.gastoPendienteBorrar = gasto;
+
+    textoBorrar.textContent = `¿Seguro que quieres borrar "${gasto.concepto}"?`;
+
+    // Se repiten los datos en el modal para que el borrado nodependa de
+    // acordarse de la fila de la tabla
+    datosBorrar.innerHTML = `
+        <dt>Importe</dt>
+        <dd>${euros(gasto.importe)}</dd>
+        <dt>Fecha</dt>
+        <dd>${escapar(fechaBonita(gasto.fecha))}</dd>
+        <dt>Categoría</dt>
+        <dd>${escapar(gasto.categoria)}</dd>
+        <dt>Método de pago</dt>
+        <dd>${escapar(gasto.metodoPago)}</dd>
+    `;
+
+    mensajeModalBorrar.hidden = true;
+    mensajeModalBorrar.textContent = '';
+
+    abrirModal(modalBorrar);
+    btnConfirmarBorrar.focus();
+}
+
+btnConfirmarBorrar.addEventListener('click', async () => {
+    const gasto = estado.gastoPendienteBorrar;
+    if (!gasto) return;
+
+    btnConfirmarBorrar.disabled = true;
+    const textoOriginal = btnConfirmarBorrar.textContent;
+    btnConfirmarBorrar.textContent = 'Borrando...';
+
+    try {
+        const respuesta = await api(`/api/gastos/${gasto.id}`, { method: 'DELETE' });
+        avisar(respuesta.mensaje);
+        cerrarModal(modalBorrar);
+        await recargar();
+    } catch (error) {
+        mensajeModalBorrar.textContent = error.message;
+        mensajeModalBorrar.hidden = false;
+    } finally {
+        btnConfirmarBorrar.disabled = false;
+        btnConfirmarBorrar.textContent = textoOriginal;
+    }
+});
 
 // --- Acciones de la tabla ---
 
-cuerpoTabla.addEventListener('click', async (evento) => {
+cuerpoTabla.addEventListener('click', evento => {
     const boton = evento.target.closest('button');
     if (!boton || estado.cargando) return;
 
@@ -657,28 +866,12 @@ cuerpoTabla.addEventListener('click', async (evento) => {
     if (!gasto) return;
 
     if (boton.classList.contains('editar')) {
-        modoEditar(gasto);
+        abrirModalEditar(gasto);
         return;
     }
 
     if (boton.classList.contains('borrar')) {
-        const ok = window.confirm(
-            `¿Seguro que quieres borrar el gasto "${gasto.concepto}" (${euros(gasto.importe)})?`
-        );
-        if (!ok) return;
-
-        boton.disabled = true;
-        try {
-            const respuesta = await api(`/api/gastos/${id}`, { method: 'DELETE' });
-            avisar(respuesta.mensaje);
-
-            // Si se estaba editando justo ese gasto, el formulario vuelve a modo alta
-            if (campoId.value === String(id)) resetearFormulario();
-            await recargar();
-        } catch (error) {
-            avisar(error.message, true);
-            boton.disabled = false;
-        }
+        abrirModalBorrar(gasto);
     }
 });
 
@@ -686,8 +879,8 @@ cuerpoTabla.addEventListener('click', async (evento) => {
 
 // Cada cambio en un filtro vuelve a la primera página
 filtroCategoria.addEventListener('change', () => { estado.pagina = 1; recargar(); });
-filtroMes.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 filtroOrden.addEventListener('change', () => { estado.pagina = 1; recargar(); });
+filtroMes.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 filtroDesde.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 filtroHasta.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 
@@ -700,8 +893,43 @@ filtroTexto.addEventListener('input', () => {
     temporizadorBusqueda = setTimeout(recargar, 300);
 });
 
-filtroLimite.addEventListener('change', () => {
-    estado.limite = Number(filtroLimite.value);
+// Cambiar de modo limpia el filtro del otro modo, para que no se queden datos
+// ocultos que vuelve a la lista al cambiar de pestaña
+modoMes.addEventListener('click', () => {
+    if (estado.modoPeriodo === 'mes') return;
+    estado.modoPeriodo = 'mes';
+    aplicarModoPeriodo();
+    estado.pagina = 1;
+    recargar();
+});
+
+modoRango.addEventListener('click', () => {
+    if (estado.modoPeriodo === 'rango') return;
+    estado.modoPeriodo = 'rango';
+    aplicarModoPeriodo();
+    estado.pagina = 1;
+    recargar();
+});
+
+chipsFiltros.addEventListener('click', evento => {
+    const boton = evento.target.closest('[data-quitar]');
+    if (!boton) return;
+    clearTimeout(temporizadorBusqueda);
+    quitarFiltro(boton.dataset.quitar);
+});
+
+// Marca el tamaño de página que está activo
+function pintarLimite() {
+    selectorLimite.querySelectorAll('[data-limite]').forEach(boton => {
+        boton.setAttribute('aria-pressed', String(Number(boton.dataset.limite) === estado.limite));
+    });
+}
+
+selectorLimite.addEventListener('click', evento => {
+    const boton = evento.target.closest('[data-limite]');
+    if (!boton) return;
+    estado.limite = Number(boton.dataset.limite);
+    pintarLimite();
     estado.pagina = 1;
     recargar();
 });
@@ -710,10 +938,13 @@ btnLimpiar.addEventListener('click', () => {
     clearTimeout(temporizadorBusqueda);
     filtroTexto.value = '';
     filtroCategoria.value = '';
+    filtroOrden.value = 'fecha';
+    // Se vuelve al modo Mes, que es el de partida, y se limpian los tres campos
+    estado.modoPeriodo = 'mes';
     filtroMes.value = '';
     filtroDesde.value = '';
     filtroHasta.value = '';
-    filtroOrden.value = 'fecha';
+    aplicarModoPeriodo();
     estado.pagina = 1;
     recargar();
 });
@@ -742,15 +973,34 @@ function descargar(url) {
     enlace.remove();
 }
 
+function cerrarMenuExportar() {
+    menuExportar.open = false;
+}
+
 btnExportarCsv.addEventListener('click', () => {
     // La exportación no pagina: el servidor devuelve todo lo que cumple el filtro
     descargar(`/api/gastos/exportar.csv?${queryFiltros(false)}`);
     avisar("Descargando los gastos filtrados en CSV");
+    cerrarMenuExportar();
 });
 
 btnExportarJson.addEventListener('click', () => {
     descargar(`/api/gastos/exportar.json?${queryFiltros(false)}`);
     avisar("Descargando los gastos filtrados en JSON");
+    cerrarMenuExportar();
+});
+
+// Un <details> se queda abierto hasta que se pulse otra vez el resumen. Se cierra
+// solo al elegir una opción, al pulsar fuera o al darle a Escape
+document.addEventListener('click', evento => {
+    if (menuExportar.open && !menuExportar.contains(evento.target)) cerrarMenuExportar();
+});
+
+document.addEventListener('keydown', evento => {
+    if (evento.key === 'Escape' && menuExportar.open) {
+        cerrarMenuExportar();
+        menuExportar.querySelector('summary').focus();
+    }
 });
 
 btnImportar.addEventListener('click', () => archivoCsv.click());
@@ -837,6 +1087,8 @@ async function iniciar() {
 
     try {
         await cargarCatalogos();
+        aplicarModoPeriodo();
+        pintarLimite();
         resetearFormulario();
         await recargar();
     } catch (error) {
