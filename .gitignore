@@ -1,5 +1,13 @@
-@"
 node_modules/
+
+# Datos personales: el fichero se regenera solo con los datos de ejemplo
+data/datos.json
+data/copias/
+data/*.tmp
+data/*.bak
+data/*.corrupto
+
 .env
 .env.local
-"@ | Out-File -Encoding utf8 .gitignore
+*.log
+.DS_Store
