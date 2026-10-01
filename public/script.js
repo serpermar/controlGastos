@@ -1,5 +1,3 @@
-/* Control de gastos - lógica del cliente (CRUD contra la API Express) */
-
 // --- Referencias al DOM ---
 const formulario = document.getElementById('formularioGasto');
 const campoId = document.getElementById('gastoId');
@@ -22,6 +20,8 @@ const tablaGastos = document.getElementById('tablaGastos');
 const filtroTexto = document.getElementById('filtroTexto');
 const filtroCategoria = document.getElementById('filtroCategoria');
 const filtroMes = document.getElementById('filtroMes');
+const filtroDesde = document.getElementById('filtroDesde');
+const filtroHasta = document.getElementById('filtroHasta');
 const filtroOrden = document.getElementById('filtroOrden');
 const filtroLimite = document.getElementById('filtroLimite');
 const btnLimpiar = document.getElementById('btnLimpiar');
@@ -44,6 +44,8 @@ const btnVaciarCancelar = document.getElementById('btnVaciarCancelar');
 const formularioPresupuesto = document.getElementById('formularioPresupuesto');
 const inputPresupuesto = document.getElementById('inputPresupuesto');
 const errorPresupuesto = document.getElementById('errorPresupuesto');
+const etiquetaPresupuesto = document.getElementById('etiquetaPresupuesto');
+const notaPresupuesto = document.getElementById('notaPresupuesto');
 
 const formularioCategoria = document.getElementById('formularioCategoria');
 const nombreCategoria = document.getElementById('nombreCategoria');
@@ -55,6 +57,9 @@ const graficoMeses = document.getElementById('graficoMeses');
 const graficoVacioCategorias = document.getElementById('graficoVacioCategorias');
 const graficoVacioMeses = document.getElementById('graficoVacioMeses');
 
+const btnTema = document.getElementById('btnTema');
+const iconoTema = document.getElementById('iconoTema');
+
 // --- Estado de la interfaz ---
 const estado = {
     pagina: 1,
@@ -64,6 +69,10 @@ const estado = {
     secuencia: 0,
     gastos: [],
     categorias: [],
+    // Mes al que pertenece la barra de presupuesto que se está mostrando
+    presupuestoMes: null,
+    // Último resumen recibido: hace falta para repintar los gráficos al cambiar de tema
+    resumen: null,
     graficos: { categorias: null, meses: null }
 };
 
@@ -83,6 +92,16 @@ function fechaBonita(fecha) {
     const [anio, mes, dia] = fecha.split('-').map(Number);
     const meses = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
     return `${dia} ${meses[mes - 1]} ${anio}`;
+}
+
+const MESES_ES = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+    'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+
+// "2026-10" -> "octubre de 2026"
+function mesBonito(mes) {
+    if (!/^\d{4}-\d{2}$/.test(mes || '')) return '';
+    const [anio, numero] = mes.split('-');
+    return `${MESES_ES[Number(numero) - 1]} de ${anio}`;
 }
 
 // Evita que un texto con HTML se ejecute al inyectarlo en la tabla.
@@ -213,10 +232,15 @@ formularioPresupuesto.addEventListener('submit', async (evento) => {
 
     const boton = formularioPresupuesto.querySelector('button');
     boton.disabled = true;
+
+    // El límite se guarda para el mes que muestra la barra, no siempre el actual
+    const cuerpo = { limite: inputPresupuesto.value };
+    if (estado.presupuestoMes) cuerpo.mes = estado.presupuestoMes;
+
     try {
         const respuesta = await api('/api/presupuesto', {
             method: 'PUT',
-            body: JSON.stringify({ limite: inputPresupuesto.value })
+            body: JSON.stringify(cuerpo)
         });
         avisar(respuesta.mensaje);
         await recargar();
@@ -236,6 +260,8 @@ function queryFiltros(conPagina = true) {
     if (filtroTexto.value.trim()) params.set('texto', filtroTexto.value.trim());
     if (filtroCategoria.value) params.set('categoria', filtroCategoria.value);
     if (filtroMes.value) params.set('mes', filtroMes.value);
+    if (filtroDesde.value) params.set('desde', filtroDesde.value);
+    if (filtroHasta.value) params.set('hasta', filtroHasta.value);
     params.set('orden', filtroOrden.value);
     if (conPagina) {
         params.set('page', estado.pagina);
@@ -309,7 +335,9 @@ function pintarResumen(resumen) {
     document.getElementById('resumenMaximoConcepto').textContent =
         resumen.gastoMaximo ? resumen.gastoMaximo.concepto : 'sin gastos';
 
-    const { limite, gastado, restante, porcentaje } = resumen.presupuesto;
+    const { limite, gastado, restante, porcentaje, mes, limitePropio } = resumen.presupuesto;
+    estado.presupuestoMes = mes;
+
     document.getElementById('resumenPresupuesto').textContent = `${euros(gastado)} / ${euros(limite)}`;
 
     const barra = document.getElementById('barraPresupuesto');
@@ -317,9 +345,19 @@ function pintarResumen(resumen) {
     barra.classList.toggle('aviso', porcentaje >= 80 && porcentaje < 100);
     barra.classList.toggle('excedido', porcentaje >= 100);
 
+    // La barra siempre corresponde a un mes concreto: se dice cuál es para que
+    // no se confunda con los totales, que sí dependen de los filtros
     document.getElementById('resumenRestante').textContent = restante >= 0
-        ? `Te quedan ${euros(restante)} este mes`
-        : `Te has pasado por ${euros(Math.abs(restante))}`;
+        ? `Te quedan ${euros(restante)} en ${mesBonito(mes)}`
+        : `Te has pasado por ${euros(Math.abs(restante))} en ${mesBonito(mes)}`;
+
+    etiquetaPresupuesto.textContent = `Ajustar límite de ${mesBonito(mes)} (€)`;
+
+    // Si el mes está usando el límite general en vez de uno propio, se avisa
+    notaPresupuesto.textContent = limitePropio
+        ? ''
+        : 'Este mes usa el límite general.';
+    notaPresupuesto.hidden = limitePropio;
 
     // El campo del presupuesto muestra el límite vigente solo si no se está editando
     if (document.activeElement !== inputPresupuesto) {
@@ -327,16 +365,77 @@ function pintarResumen(resumen) {
     }
 }
 
-// --- Gráficos (Chart.js si está disponible) ---
+// --- Tema claro / oscuro ---
 
-const COLOR_ESTADO = {
-    ok: '#2f6f4f',
-    acento: '#e8a33d'
-};
+const CLAVE_TEMA = 'tema';
+
+// Si no hay nada guardado se sigue al tema del sistema, que es lo que aplican
+// los estilos mediante prefers-color-scheme
+function temaDelSistema() {
+    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'oscuro' : 'claro';
+}
+
+function temaActual() {
+    return document.documentElement.dataset.tema || temaDelSistema();
+}
+
+function aplicarTema(tema) {
+    document.documentElement.dataset.tema = tema;
+
+    try {
+        localStorage.setItem(CLAVE_TEMA, tema);
+    } catch {
+        // Sin almacenamiento el tema solo dura hasta recargar
+    }
+
+    iconoTema.textContent = tema === 'oscuro' ? '☀️' : '🌙';
+    btnTema.title = tema === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
+
+    // Los gráficos llevan los colores fijados al crearlos, así que hay que
+    // rehacerlos para que no se queden en los tonos del tema anterior
+    if (estado.resumen) pintarGraficos(estado.resumen);
+}
+
+btnTema.addEventListener('click', () => {
+    aplicarTema(temaActual() === 'oscuro' ? 'claro' : 'oscuro');
+});
+
+// Si el usuario no ha elegido nada y el sistema cambia de tema, se le sigue
+window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', evento => {
+    if (!document.documentElement.dataset.tema) {
+        iconoTema.textContent = evento.matches ? '☀️' : '🌙';
+        if (estado.resumen) pintarGraficos(estado.resumen);
+    }
+});
+
+// --- Gráficos (Chart.js si está disponible) ---
 
 // Si la librería no cargó (sin internet) los gráficos simplemente no se pintan
 function tieneChartJs() {
     return typeof window.Chart !== 'undefined';
+}
+
+// Los colores salen de la hoja de estilos, no de constantes aquí: así los
+// gráficos cambian solos con el tema
+function coloresTema() {
+    const estilos = getComputedStyle(document.documentElement);
+    const leer = (nombre, porDefecto) => estilos.getPropertyValue(nombre).trim() || porDefecto;
+
+    return {
+        ok: leer('--cg-primary', '#059669'),
+        acento: leer('--cg-acento', '#f59e0b'),
+        texto: leer('--cg-texto-suave', '#64748b'),
+        borde: leer('--cg-borde', '#e2e8f0'),
+        // Tonos extra para cuando hay más categorías que colores
+        paleta: [
+            leer('--cg-primary', '#059669'),
+            leer('--cg-acento', '#f59e0b'),
+            leer('--cg-etiqueta-fg', '#334155'),
+            '#5b8fa8',
+            '#9c6b9e',
+            '#c96f4a'
+        ]
+    };
 }
 
 function pintarGraficos(resumen) {
@@ -356,6 +455,11 @@ function pintarGraficos(resumen) {
     estado.graficos.categorias = null;
     estado.graficos.meses = null;
 
+    const color = coloresTema();
+    // Leyenda y ejes usan estos valores por defecto en todo lo que se cree después
+    Chart.defaults.color = color.texto;
+    Chart.defaults.borderColor = color.borde;
+
     if (hayCategorias) {
         estado.graficos.categorias = new Chart(graficoCategorias, {
             type: 'doughnut',
@@ -363,7 +467,7 @@ function pintarGraficos(resumen) {
                 labels: resumen.categorias.map(c => c.categoria),
                 datasets: [{
                     data: resumen.categorias.map(c => c.importe),
-                    backgroundColor: [COLOR_ESTADO.ok, COLOR_ESTADO.acento, '#5b8fa8', '#9c6b9e', '#c96f4a', '#7a9e5b']
+                    backgroundColor: color.paleta
                 }]
             },
             options: {
@@ -383,6 +487,9 @@ function pintarGraficos(resumen) {
 
     if (hayMeses) {
         const etiquetas = resumen.meses.map(m => m.mes);
+        const mesActual = new Date();
+        const esteMes = `${mesActual.getFullYear()}-${String(mesActual.getMonth() + 1).padStart(2, '0')}`;
+
         estado.graficos.meses = new Chart(graficoMeses, {
             type: 'bar',
             data: {
@@ -390,7 +497,8 @@ function pintarGraficos(resumen) {
                 datasets: [{
                     label: 'Gasto por mes',
                     data: resumen.meses.map(m => m.importe),
-                    backgroundColor: etiquetas.map((_, i) => COLOR_ESTADO.ok),
+                    // El mes en curso se resalta para localizarlo de un vistazo
+                    backgroundColor: etiquetas.map(mes => (mes === esteMes ? color.acento : color.ok)),
                     borderRadius: 4
                 }]
             },
@@ -406,9 +514,12 @@ function pintarGraficos(resumen) {
                     }
                 },
                 scales: {
+                    x: { grid: { display: false } },
                     y: {
                         beginAtZero: true,
+                        grid: { color: color.borde },
                         ticks: {
+                            color: color.texto,
                             callback: valor => euros(valor)
                         }
                     }
@@ -435,6 +546,7 @@ async function recargar() {
 
         estado.gastos = listado.datos;
         estado.pagina = listado.paginacion.pagina;
+        estado.resumen = resumen;
 
         pintarTabla(listado.datos);
         pintarPaginacion(listado.paginacion);
@@ -576,6 +688,8 @@ cuerpoTabla.addEventListener('click', async (evento) => {
 filtroCategoria.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 filtroMes.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 filtroOrden.addEventListener('change', () => { estado.pagina = 1; recargar(); });
+filtroDesde.addEventListener('change', () => { estado.pagina = 1; recargar(); });
+filtroHasta.addEventListener('change', () => { estado.pagina = 1; recargar(); });
 
 // En el texto se espera a que el usuario pare de escribir: sin esto se lanzarían
 // dos peticiones a la API por cada tecla
@@ -597,6 +711,8 @@ btnLimpiar.addEventListener('click', () => {
     filtroTexto.value = '';
     filtroCategoria.value = '';
     filtroMes.value = '';
+    filtroDesde.value = '';
+    filtroHasta.value = '';
     filtroOrden.value = 'fecha';
     estado.pagina = 1;
     recargar();
@@ -655,14 +771,19 @@ archivoCsv.addEventListener('change', async () => {
         if (respuesta.categoriasCreadas.length) {
             mensaje += `. Categorías nuevas: ${respuesta.categoriasCreadas.join(', ')}`;
         }
-        if (respuesta.omitidos) {
-            mensaje += `. ${respuesta.omitidos} fila(s) omitidas por errores`;
-        }
-        avisar(mensaje, respuesta.omitidos > 0);
+
+        // La importación avisa de lo que se saltó, y con detalle si hubo que hacerlo
+        const saltados = (respuesta.omitidos || 0) + (respuesta.duplicados || 0);
+        if (saltados) mensaje += `. ${saltados} fila(s) no importada(s)`;
+
+        avisar(mensaje, saltados > 0);
 
         // El detalle de los fallos se muestra en consola por no saturar la pantalla
         if (respuesta.errores.length) {
             console.warn('Filas omitidas en la importación:', respuesta.errores);
+            if (respuesta.erroresOmitidos) {
+                console.warn(`... y ${respuesta.erroresOmitidos} error(es) más no detallados.`);
+            }
         }
 
         await cargarCatalogos();
@@ -708,6 +829,12 @@ btnVaciarConfirmar.addEventListener('click', async () => {
 // --- Arranque ---
 
 async function iniciar() {
+    // El icono del botón se pone al abrir, sin llamar a aplicarTema para no
+    // machacar lo que hubiera elegido el usuario ni escribir en localStorage
+    const tema = temaActual();
+    iconoTema.textContent = tema === 'oscuro' ? '☀️' : '🌙';
+    btnTema.title = tema === 'oscuro' ? 'Cambiar a tema claro' : 'Cambiar a tema oscuro';
+
     try {
         await cargarCatalogos();
         resetearFormulario();

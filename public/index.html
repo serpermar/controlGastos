@@ -5,11 +5,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Control de Gastos & Finanzas</title>
+    <script>
+        // El tema se fija antes de pintar: si se hiciera después, la página
+        // aparecería un instante en claro antes de ponerse oscura
+        try {
+            const tema = localStorage.getItem('tema');
+            if (tema === 'claro' || tema === 'oscuro') {
+                document.documentElement.dataset.tema = tema;
+            }
+        } catch {
+            // Con las cookies bloqueadas se sigue con el tema del sistema
+        }
+    </script>
     <link rel="stylesheet" href="styles.css">
 </head>
 
 <body>
     <header class="cabecera">
+        <button type="button" class="btn-tema" id="btnTema" aria-label="Cambiar entre tema claro y oscuro">
+            <span id="iconoTema" aria-hidden="true">🌙</span>
+        </button>
         <h1>Gestión de Gastos</h1>
         <p class="subtitulo">Panel de control de presupuesto y finanzas personales</p>
     </header>
@@ -33,34 +48,35 @@
                 <span class="valor" id="resumenMaximo">--</span>
                 <span class="detalle" id="resumenMaximoConcepto">&nbsp;</span>
             </div>
-            <div class="tarjeta-resumen presupuesto">
-                <span class="etiqueta">Presupuesto Mensual</span>
-                <span class="valor" id="resumenPresupuesto">--</span>
-                <div class="barra">
-                    <div class="barra-relleno" id="barraPresupuesto"></div>
-                </div>
-                <span class="detalle" id="resumenRestante">&nbsp;</span>
-
-                <form class="formulario-presupuesto" id="formularioPresupuesto">
-                    <label for="inputPresupuesto">Ajustar límite (€)</label>
-                    <div class="fila">
-                        <input type="number" id="inputPresupuesto" min="1" step="0.01" required placeholder="1200">
-                        <button type="submit" class="btn btn-primario" id="btnPresupuesto">Guardar</button>
+<div class="tarjeta-resumen presupuesto">
+                    <span class="etiqueta">Presupuesto Mensual</span>
+                    <span class="valor" id="resumenPresupuesto">--</span>
+                    <div class="barra">
+                        <div class="barra-relleno" id="barraPresupuesto"></div>
                     </div>
-                    <p class="mensaje-error" id="errorPresupuesto" hidden></p>
-                </form>
-            </div>
+                    <span class="detalle" id="resumenRestante">&nbsp;</span>
+
+                    <form class="formulario-presupuesto" id="formularioPresupuesto">
+                        <label for="inputPresupuesto" id="etiquetaPresupuesto">Ajustar límite (€)</label>
+                        <div class="fila">
+                            <input type="number" id="inputPresupuesto" min="1" step="0.01" required placeholder="1200">
+                            <button type="submit" class="btn btn-primario" id="btnPresupuesto">Guardar</button>
+                        </div>
+                        <p class="detalle presupuesto-nota" id="notaPresupuesto" hidden></p>
+                        <p class="mensaje-error" id="errorPresupuesto" hidden></p>
+                    </form>
+                </div>
         </section>
 
         <div class="columnas">
 
             <!-- Formulario de alta / edición -->
             <section class="panel" aria-label="Formulario de gastos">
-                <h2 id="tituloFormulario">
+                <h2>
                     <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
                         <path d="M12 5v14m-7-7h14"></path>
                     </svg>
-                    Nuevo Gasto
+                    <span id="tituloFormulario">Nuevo Gasto</span>
                 </h2>
 
                 <form id="formularioGasto" novalidate>
@@ -146,6 +162,9 @@
 
                     <input type="month" id="filtroMes" title="Filtrar por mes">
 
+                    <input type="date" id="filtroDesde" title="Desde esta fecha">
+                    <input type="date" id="filtroHasta" title="Hasta esta fecha">
+
                     <select id="filtroOrden">
                         <option value="fecha">Más recientes</option>
                         <option value="importe">Mayor importe</option>
@@ -170,7 +189,7 @@
 
                 <!-- Confirmación de borrado masivo -->
                 <div class="confirmacion" id="confirmacionVaciar" hidden>
-                    <span id="textoConfirmacion">Se borrarán TODOS los gastos de la base de datos.</span>
+                    <span id="textoConfirmacion">Se borrarán TODOS los gastos guardados.</span>
                     <div class="acciones">
                         <button type="button" class="btn btn-peligro" id="btnVaciarConfirmar">Confirmar borrado</button>
                         <button type="button" class="btn btn-secundario" id="btnVaciarCancelar">Cancelar</button>

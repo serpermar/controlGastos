@@ -5,12 +5,23 @@ const fs = require('fs/promises');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Archivo donde se guardan los datos entre reinicios del servidor
-const RUTA_DATOS = path.join(__dirname, 'data', 'datos.json');
+// Archivo donde se guardan los datos entre reinicios del servidor.
+// Se puede mover con DATOS_PATH, que es lo que usan las pruebas para no tocar
+// los datos de verdad.
+const RUTA_DATOS = process.env.DATOS_PATH
+    ? path.resolve(process.env.DATOS_PATH)
+    : path.join(__dirname, 'data', 'datos.json');
 
 // Temporal del guardado atómico y copia del archivo cuando llega corrupto
 const RUTA_DATOS_TMP = `${RUTA_DATOS}.tmp`;
 const RUTA_DATOS_CORRUPTO = `${RUTA_DATOS}.corrupto`;
+
+// Copias de seguridad que se crean al arrancar con los datos que ya había
+const RUTA_COPIAS = path.join(path.dirname(RUTA_DATOS), 'copias');
+const MAX_COPIAS = 10;
+
+// Cuántos errores de una importación se devuelven como máximo (el resto se cuenta)
+const MAX_ERRORES_INFORME = 50;
 
 // Middlewares para procesar JSON y formularios
 app.use(express.json({ limit: '2mb' }));
@@ -48,7 +59,8 @@ const LIMITE_MAXIMO = 200;
 // Se cargan de data/datos.json al arrancar y se vuelven a guardar en cada cambio.
 let gastos = [];
 let categorias = [...CATEGORIAS_POR_DEFECTO];
-let presupuestoMensual = PRESUPUESTO_INICIAL;
+let presupuestoPorDefecto = PRESUPUESTO_INICIAL;
+let presupuestosPorMes = {};
 let siguienteId = 1;
 
 // --- PERSISTENCIA EN ARCHIVO JSON (fs/promises) ---
@@ -69,22 +81,97 @@ async function cargarDatos() {
         }
 
         gastos = gastosEjemplo();
+        siguienteId = calcularSiguienteId(gastos, 0);
         await guardarDatos();
         return;
     }
 
-    gastos = Array.isArray(guardados.gastos) ? guardados.gastos : [];
+    // Antes de tocar nada se guarda una copia: si al sanear hay que descartar
+    // algún registro, el contenido original sigue disponible en data/copias
+    await respaldarDatos();
+
     categorias = Array.isArray(guardados.categorias) && guardados.categorias.length
-        ? guardados.categorias
+        ? guardados.categorias.filter(nombre => typeof nombre === 'string' && nombre.trim())
         : [...CATEGORIAS_POR_DEFECTO];
-    presupuestoMensual = Number.isFinite(guardados.presupuesto)
+
+    // Se admite el formato antiguo (una sola cifra) y el nuevo (límite por mes)
+    presupuestoPorDefecto = Number.isFinite(guardados.presupuesto)
         ? guardados.presupuesto
         : PRESUPUESTO_INICIAL;
 
-    const maximo = gastos.reduce((mayor, g) => Math.max(mayor, g.id || 0), 0);
-    siguienteId = Math.max(Number(guardados.siguienteId) || 0, maximo + 1);
+    presupuestosPorMes = {};
+    if (guardados.presupuestos && typeof guardados.presupuestos === 'object') {
+        for (const [mes, limite] of Object.entries(guardados.presupuestos)) {
+            if (esMesValido(mes) && Number.isFinite(limite) && limite > 0) {
+                presupuestosPorMes[mes] = limite;
+            }
+        }
+    }
+
+    // El archivo es la base de datos y además puede editarse a mano, así que
+    // nada de lo que venga de ahí se trusts: se descarta lo que no sea válido
+    // en lugar de dejar que reviente una petición más adelante
+    const { gastos: limpios, descartados } = sanearGastos(
+        Array.isArray(guardados.gastos) ? guardados.gastos : []
+    );
+
+    gastos = limpios;
+
+    if (descartados.length) {
+        console.warn(`Se han descartado ${descartados.length} registro(s) inválidos de ${RUTA_DATOS}:`);
+        for (const registro of descartados) {
+            console.warn(`  ${registro.id !== null ? `#${registro.id}` : 'sin id'}: ${registro.motivo}`);
+        }
+        console.warn('Se pueden recuperar en data/copias.');
+    }
+
+    siguienteId = calcularSiguienteId(gastos, guardados.siguienteId);
 
     console.log(`Datos cargados desde ${RUTA_DATOS} (${gastos.length} gastos)`);
+}
+
+// El siguiente id nunca puede ser menor que el mayor id que ya existe: si no,
+// el primer gasto nuevo se pisaría con uno que ya está guardado
+function calcularSiguienteId(lista, guardado) {
+    const maximo = lista.reduce((mayor, g) => Math.max(mayor, Math.trunc(Number(g.id)) || 0), 0);
+    return Math.max(Math.trunc(Number(guardado)) || 0, maximo + 1, 1);
+}
+
+// Copia el archivo actual a data/copias y se queda solo con las más recientes
+async function respaldarDatos() {
+    try {
+        const contenido = await fs.readFile(RUTA_DATOS);
+        await fs.mkdir(RUTA_COPIAS, { recursive: true });
+
+        const archivos = (await fs.readdir(RUTA_COPIAS))
+            .filter(nombre => /^datos-\d{14}\.json$/.test(nombre))
+            .sort();
+
+        // Si la copia más reciente es idéntica no se crea otra. Con --watch el
+        // servidor reinicia en cada guardado y sin esto se llenan de copias
+        // iguales del mismo archivo.
+        if (archivos.length) {
+            const reciente = archivos[archivos.length - 1];
+            const anterior = await fs.readFile(path.join(RUTA_COPIAS, reciente));
+            if (contenido.equals(anterior)) {
+                console.log(`Los datos no han cambiado: se reutiliza la copia ${reciente}`);
+                return;
+            }
+        }
+
+        const marca = new Date().toISOString().slice(0, 19).replace(/\D/g, '');
+        const nombre = `datos-${marca}.json`;
+        await fs.writeFile(path.join(RUTA_COPIAS, nombre), contenido);
+
+        const todos = [...archivos, nombre].sort();
+        for (const sobra of todos.slice(0, Math.max(0, todos.length - MAX_COPIAS))) {
+            await fs.unlink(path.join(RUTA_COPIAS, sobra));
+        }
+
+        console.log(`Copia de seguridad creada en data/copias/${nombre} (${Math.min(todos.length, MAX_COPIAS)} de ${MAX_COPIAS})`);
+    } catch (error) {
+        console.error(`No se pudo crear la copia de seguridad: ${error.message}`);
+    }
 }
 
 async function apartarDatosCorruptos() {
@@ -102,7 +189,14 @@ function guardarDatos() {
     cadenaGuardado = cadenaGuardado.then(async () => {
         try {
             await fs.mkdir(path.dirname(RUTA_DATOS), { recursive: true });
-            const contenido = { gastos, categorias, presupuesto: presupuestoMensual, siguienteId };
+            const contenido = {
+                version: 2,
+                gastos,
+                categorias,
+                presupuesto: presupuestoPorDefecto,
+                presupuestos: presupuestosPorMes,
+                siguienteId
+            };
 
             await fs.writeFile(RUTA_DATOS_TMP, JSON.stringify(contenido, null, 2), 'utf8');
             await fs.rename(RUTA_DATOS_TMP, RUTA_DATOS);
@@ -143,6 +237,75 @@ function hoy() {
     return `${d.getFullYear()}-${mes}-${dia}`;
 }
 
+function mesActual() {
+    return hoy().slice(0, 7);
+}
+
+function esMesValido(mes) {
+    if (typeof mes !== 'string' || !/^\d{4}-(0[1-9]|1[0-2])$/.test(mes)) return false;
+    return Number(mes.slice(0, 4)) >= 1000 && Number(mes.slice(0, 4)) <= 9999;
+}
+
+// --- SANEADO DE DATOS AL CARGAR ---
+
+// El archivo es la base de datos y también puede editarse a mano. Al leerlo se
+// descarta lo que no cumpla el formato en lugar de guardarlo y que reviente una
+// petición más adelante (por ejemplo, un gasto sin fecha rompe la suma del mes).
+function sanearGastos(lista) {
+    const saneados = [];
+    const descartados = [];
+    const idsUsados = new Set();
+
+    for (const bruto of lista) {
+        if (!bruto || typeof bruto !== 'object' || Array.isArray(bruto)) {
+            descartados.push({ id: null, motivo: 'el registro no es un objeto' });
+            continue;
+        }
+
+        const motivos = [];
+        const id = Math.trunc(Number(bruto.id));
+
+        if (!Number.isInteger(id) || id < 1) motivos.push(`id inválido (${JSON.stringify(bruto.id)})`);
+        else if (idsUsados.has(id)) motivos.push(`id repetido (${id})`);
+
+        const concepto = typeof bruto.concepto === 'string' ? bruto.concepto.trim() : '';
+        if (!concepto) motivos.push('concepto vacío');
+        else if (concepto.length > 80) motivos.push('concepto de más de 80 caracteres');
+
+        const importe = aNumero(bruto.importe);
+        if (importe === null) motivos.push(`importe no numérico (${JSON.stringify(bruto.importe)})`);
+        else if (importe <= 0) motivos.push('importe menor o igual que 0');
+        else if (importe > 100000) motivos.push('importe mayor que 100.000');
+
+        const fecha = typeof bruto.fecha === 'string' ? bruto.fecha.trim() : '';
+        if (!esFechaValida(fecha)) motivos.push(`fecha inválida (${JSON.stringify(bruto.fecha)})`);
+
+        const categoria = categoriaConocida(bruto.categoria);
+        if (!categoria) motivos.push(`categoría desconocida (${JSON.stringify(bruto.categoria)})`);
+
+        const metodoPago = metodoConocido(bruto.metodoPago);
+        if (!metodoPago) motivos.push(`método de pago desconocido (${JSON.stringify(bruto.metodoPago)})`);
+
+        if (motivos.length) {
+            descartados.push({ id: Number.isInteger(id) ? id : null, motivo: motivos.join('. ') });
+            continue;
+        }
+
+        idsUsados.add(id);
+        saneados.push({
+            id,
+            concepto,
+            categoria,
+            importe: Number(importe.toFixed(2)),
+            metodoPago,
+            fecha,
+            notas: typeof bruto.notas === 'string' ? bruto.notas.trim().slice(0, 140) : ''
+        });
+    }
+
+    return { gastos: saneados, descartados };
+}
+
 function categoriaConocida(categoria) {
     return categorias.find(c => clave(c) === clave(categoria)) || null;
 }
@@ -166,9 +329,15 @@ function crearCategoriaSiFalta(nombre) {
     return limpio;
 }
 
-function estadoPresupuesto(limitePedido) {
-    const limite = Number.isFinite(limitePedido) ? limitePedido : presupuestoMensual;
-    const mes = hoy().slice(0, 7);
+// El límite puede fijarse mes a mes; los meses sin límite propio usan el general
+function limitePresupuesto(mes) {
+    const limite = aNumero(presupuestosPorMes[mes]);
+    return limite === null ? presupuestoPorDefecto : limite;
+}
+
+function estadoPresupuesto(mesPedido, limitePedido) {
+    const mes = esMesValido(mesPedido) ? mesPedido : mesActual();
+    const limite = Number.isFinite(limitePedido) ? limitePedido : limitePresupuesto(mes);
 
     const gastado = gastos
         .filter(g => g.fecha.startsWith(mes))
@@ -177,13 +346,14 @@ function estadoPresupuesto(limitePedido) {
     return {
         mes,
         limite,
+        limitePropio: Object.prototype.hasOwnProperty.call(presupuestosPorMes, mes),
         gastado: Number(gastado.toFixed(2)),
         restante: Number((limite - gastado).toFixed(2)),
         porcentaje: limite ? Number(((gastado / limite) * 100).toFixed(1)) : 0
     };
 }
 
-function calcularResumen(lista, limite) {
+function calcularResumen(lista, { mes, limite } = {}) {
     const total = lista.reduce((suma, g) => suma + g.importe, 0);
 
     const porCategoria = {};
@@ -191,16 +361,16 @@ function calcularResumen(lista, limite) {
         porCategoria[g.categoria] = (porCategoria[g.categoria] || 0) + g.importe;
     }
     const categoriasResumen = Object.entries(porCategoria)
-        .map(([categoria, importe]) => ({ categoria, importe }))
+        .map(([categoria, importe]) => ({ categoria, importe: Number(importe.toFixed(2)) }))
         .sort((a, b) => b.importe - a.importe);
 
     const porMes = {};
     for (const g of lista) {
-        const mes = g.fecha.slice(0, 7);
-        porMes[mes] = (porMes[mes] || 0) + g.importe;
+        const mesGasto = g.fecha.slice(0, 7);
+        porMes[mesGasto] = (porMes[mesGasto] || 0) + g.importe;
     }
     const meses = Object.entries(porMes)
-        .map(([mes, importe]) => ({ mes, importe }))
+        .map(([mes, importe]) => ({ mes, importe: Number(importe.toFixed(2)) }))
         .sort((a, b) => a.mes.localeCompare(b.mes));
 
     const gastoMaximo = lista.reduce(
@@ -214,7 +384,7 @@ function calcularResumen(lista, limite) {
         promedio: lista.length ? Number((total / lista.length).toFixed(2)) : 0,
         categorias: categoriasResumen,
         meses,
-        presupuesto: estadoPresupuesto(limite),
+        presupuesto: estadoPresupuesto(mes, limite),
         gastoMaximo: gastoMaximo
             ? { id: gastoMaximo.id, concepto: gastoMaximo.concepto, importe: gastoMaximo.importe }
             : null
@@ -266,9 +436,12 @@ function validarGasto(datos, { permitirCrearCategoria = false } = {}) {
 function aplicarFiltros(lista, query) {
     const texto = String(query.texto || '').trim().toLowerCase();
     const categoria = query.categoria;
-    const mes = String(query.mes || '').trim();
-    const desde = String(query.desde || '').trim();
-    const hasta = String(query.hasta || '').trim();
+    const mes = esMesValido(String(query.mes || '').trim()) ? String(query.mes).trim() : '';
+
+    // Un rango invertido se invierte en lugar de devolver una lista vacía
+    let desde = esFechaValida(String(query.desde || '').trim()) ? String(query.desde).trim() : '';
+    let hasta = esFechaValida(String(query.hasta || '').trim()) ? String(query.hasta).trim() : '';
+    if (desde && hasta && desde > hasta) [desde, hasta] = [hasta, desde];
 
     return lista.filter(g => {
         if (texto && !(`${g.concepto} ${g.notas}`.toLowerCase().includes(texto))) return false;
@@ -278,6 +451,20 @@ function aplicarFiltros(lista, query) {
         if (hasta && g.fecha > hasta) return false;
         return true;
     });
+}
+
+// Mes al que se refiere el presupuesto que se muestra. Si no se filtra por mes,
+// un rango de fechas que cae entero dentro de un mes ya indica cuál es.
+function mesDelFiltro(query) {
+    if (esMesValido(String(query.mes || '').trim())) return String(query.mes).trim();
+
+    const desde = esFechaValida(String(query.desde || '').trim()) ? String(query.desde).trim() : '';
+    const hasta = esFechaValida(String(query.hasta || '').trim()) ? String(query.hasta).trim() : '';
+
+    if (desde && hasta && desde.slice(0, 7) === hasta.slice(0, 7)) {
+        return desde.slice(0, 7);
+    }
+    return null;
 }
 
 function paginar(lista, query) {
@@ -318,7 +505,7 @@ function gastosACsv(lista) {
         g.id,
         g.concepto,
         g.categoria,
-        g.importe.toFixed(2),
+        Number(g.importe || 0).toFixed(2),
         g.fecha,
         g.metodoPago,
         g.notas
@@ -400,6 +587,53 @@ const COLUMNAS_CSV = {
     comentario: 'notas'
 };
 
+// Al exportar desde Excel en español los importes llegan como "33,80" o como
+// "1.234,56". Solo se tocan los patrones inequívocos; cualquier otra cosa se
+// deja como está y la fila acaba informada como error.
+function normalizarImporteCsv(texto) {
+    const limpio = String(texto ?? '').replace(/[\s\u00a0]/g, '').replace(/€|eur/gi, '');
+
+    if (/^-?\d{1,3}(\.\d{3})+(,\d{1,2})?$/.test(limpio)) {
+        return limpio.replace(/\./g, '').replace(',', '.');
+    }
+    if (/^-?\d+,\d{1,2}$/.test(limpio)) {
+        return limpio.replace(',', '.');
+    }
+    return limpio;
+}
+
+// Un gasto se identifica por sus propios datos. Sirve para no meter dos veces
+// la misma fila cuando el CSV no trae la columna id.
+function huellaGasto(g) {
+    return [
+        clave(g.concepto),
+        g.fecha,
+        Number(g.importe).toFixed(2),
+        clave(g.categoria),
+        clave(g.metodoPago),
+        clave(g.notas)
+    ].join('|');
+}
+
+// La misma huella pero calculada sobre una fila de CSV todavía sin validar.
+// Devuelve null si la fila no tiene los datos mínimos para compararla.
+function huellaTentativa(candidato) {
+    const concepto = String(candidato.concepto || '').trim();
+    const fecha = String(candidato.fecha || '').trim();
+    const importe = Number(normalizarImporteCsv(candidato.importe));
+
+    if (!concepto || !esFechaValida(fecha) || !Number.isFinite(importe)) return null;
+
+    return [
+        clave(concepto),
+        fecha,
+        importe.toFixed(2),
+        clave(candidato.categoria),
+        clave(candidato.metodoPago),
+        clave(candidato.notas)
+    ].join('|');
+}
+
 // --- DATOS DE EJEMPLO (se usan únicamente si no existe data/datos.json) ---
 
 function gastosEjemplo() {
@@ -476,30 +710,80 @@ app.delete('/api/categorias/:nombre', async (req, res) => {
 });
 
 app.get('/api/presupuesto', (req, res) => {
-    res.json(estadoPresupuesto());
+    res.json({
+        ...estadoPresupuesto(mesDelFiltro(req.query)),
+        limitePorDefecto: presupuestoPorDefecto,
+        mesesConLimite: Object.keys(presupuestosPorMes).sort()
+    });
 });
 
 app.put('/api/presupuesto', async (req, res) => {
-    const limite = aNumero(req.body?.limite);
+    const cuerpo = req.body || {};
+    const cambios = [];
 
-    if (limite === null) {
-        return res.status(400).json({ error: "El límite debe ser un número" });
-    }
-    if (limite <= 0) {
-        return res.status(400).json({ error: "El límite debe ser mayor que 0" });
-    }
-    if (limite > 1000000) {
-        return res.status(400).json({ error: "El límite no puede superar 1.000.000 €" });
+    const comprobarLimite = (valor, etiqueta) => {
+        if (valor <= 0) return `${etiqueta} debe ser mayor que 0`;
+        if (valor > 1000000) return `${etiqueta} no puede superar 1.000.000 €`;
+        return null;
+    };
+
+    // { limitePorDefecto: 500 } cambia el valor general para todos los meses
+    // que no tengan un límite propio
+    const general = aNumero(cuerpo.limitePorDefecto);
+    if (general !== null) {
+        const problema = comprobarLimite(general, 'El límite general');
+        if (problema) return res.status(400).json({ error: problema });
+
+        presupuestoPorDefecto = Number(general.toFixed(2));
+        cambios.push(`límite general a ${presupuestoPorDefecto} €`);
     }
 
-    presupuestoMensual = Number(limite.toFixed(2));
+    // { limite: 200, mes: "2026-08" } fija el límite de un mes concreto.
+    // Si no viene mes, se toma el actual para no romper las llamadas antiguas.
+    const vieneMes = cuerpo.mes !== undefined && cuerpo.mes !== null && cuerpo.mes !== '';
+    const vieneLimite = cuerpo.limite !== undefined;
+    const mes = vieneMes ? String(cuerpo.mes).trim() : (vieneLimite ? mesActual() : null);
+
+    if (mes !== null) {
+        if (!esMesValido(mes)) {
+            return res.status(400).json({ error: "El mes debe tener formato AAAA-MM, por ejemplo 2026-08" });
+        }
+
+        const limite = aNumero(cuerpo.limite);
+
+        if (limite === null) {
+            // Sin límite propio en ese mes: vuelve a valer el general
+            if (Object.prototype.hasOwnProperty.call(presupuestosPorMes, mes)) {
+                delete presupuestosPorMes[mes];
+                cambios.push(`${mes} vuelve al límite general`);
+            }
+        } else {
+            const problema = comprobarLimite(limite, 'El límite');
+            if (problema) return res.status(400).json({ error: problema });
+
+            presupuestosPorMes[mes] = Number(limite.toFixed(2));
+            cambios.push(`${mes} a ${presupuestosPorMes[mes]} €`);
+        }
+    }
+
+    if (!cambios.length) {
+        return res.status(400).json({ error: "No hay ningún límite que actualizar" });
+    }
+
     await guardarDatos();
-    res.json({ mensaje: `Presupuesto mensual actualizado a ${presupuestoMensual} €`, presupuesto: estadoPresupuesto() });
+    res.json({
+        mensaje: `Presupuesto actualizado: ${cambios.join(' y ')}`,
+        presupuesto: estadoPresupuesto(mes ?? mesActual()),
+        limitePorDefecto: presupuestoPorDefecto,
+        mesesConLimite: Object.keys(presupuestosPorMes).sort()
+    });
 });
 
 app.get('/api/resumen', (req, res) => {
-    const limite = aNumero(req.query.presupuesto);
-    res.json(calcularResumen(aplicarFiltros(gastos, req.query), limite));
+    res.json(calcularResumen(aplicarFiltros(gastos, req.query), {
+        mes: mesDelFiltro(req.query),
+        limite: aNumero(req.query.presupuesto)
+    }));
 });
 
 // --- RUTAS API PARA GASTOS (CRUD) ---
@@ -517,7 +801,8 @@ app.get('/api/gastos/exportar.json', (req, res) => {
     res.setHeader('Content-Disposition', 'attachment; filename="gastos.json"');
     res.json({
         exportadoEn: new Date().toISOString(),
-        presupuesto: presupuestoMensual,
+        presupuesto: presupuestoPorDefecto,
+        presupuestos: presupuestosPorMes,
         numeroGastos: filtrados.length,
         gastos: filtrados
     });
@@ -546,7 +831,13 @@ app.post('/api/gastos/importar', async (req, res) => {
 
     const errores = [];
     const categoriasCreadas = [];
+    const idsExistentes = new Set(gastos.map(g => g.id));
+    const hayColumnaId = indices.id !== undefined;
+    const huellas = new Set(gastos.map(g => huellaGasto(g)));
+
     let insertados = 0;
+    let duplicados = 0;
+    let omitidos = 0;
 
     for (let fila = 1; fila < filas.length; fila++) {
         const celdas = filas[fila];
@@ -555,17 +846,41 @@ app.post('/api/gastos/importar', async (req, res) => {
         const categoriaTexto = leer('categoria');
         const categoriaAntes = categoriaConocida(categoriaTexto);
 
-        const { errores: fallo, gasto } = validarGasto({
+        const candidato = {
             concepto: leer('concepto'),
-            importe: leer('importe'),
+            importe: normalizarImporteCsv(leer('importe')),
             fecha: leer('fecha'),
             categoria: categoriaTexto,
             metodoPago: leer('metodoPago') || 'Tarjeta',
             notas: leer('notas')
-        }, { permitirCrearCategoria: true });
+        };
+
+        // Reimportar el mismo fichero no debe duplicar los gastos. Si el CSV
+        // trae la columna id se compara con ella; si no, se ignoran las filas
+        // idénticas a un gasto que ya existe.
+        if (hayColumnaId) {
+            const id = Math.trunc(Number(leer('id')));
+            if (Number.isInteger(id) && id >= 1) {
+                if (idsExistentes.has(id)) {
+                    duplicados++;
+                    continue;
+                }
+            }
+        } else {
+            const huella = huellaTentativa(candidato);
+            if (huella && huellas.has(huella)) {
+                duplicados++;
+                continue;
+            }
+        }
+
+        const { errores: fallo, gasto } = validarGasto(candidato, { permitirCrearCategoria: true });
 
         if (fallo.length) {
-            errores.push({ fila: fila + 1, concepto: leer('concepto'), motivo: fallo.join(". ") });
+            omitidos++;
+            if (errores.length < MAX_ERRORES_INFORME) {
+                errores.push({ fila: fila + 1, concepto: candidato.concepto, motivo: fallo.join(". ") });
+            }
             continue;
         }
 
@@ -573,16 +888,29 @@ app.post('/api/gastos/importar', async (req, res) => {
             categoriasCreadas.push(gasto.categoria);
         }
 
-        gastos.push({ id: siguienteId++, ...gasto });
+        const idPropio = hayColumnaId ? Math.trunc(Number(leer('id'))) : siguienteId;
+        const id = Number.isInteger(idPropio) && idPropio >= 1 ? idPropio : siguienteId;
+
+        gastos.push({ id, ...gasto });
+        idsExistentes.add(id);
+        huellas.add(huellaGasto({ id, ...gasto }));
+        siguienteId = Math.max(siguienteId, id + 1);
         insertados++;
     }
 
     await guardarDatos();
+
+    const partes = [`Importación terminada: ${insertados} ${insertados === 1 ? 'gasto añadido' : 'gastos añadidos'}`];
+    if (duplicados) partes.push(`${duplicados} ${duplicados === 1 ? 'duplicado omitido' : 'duplicados omitidos'}`);
+    if (omitidos) partes.push(`${omitidos} ${omitidos === 1 ? 'fila con errores' : 'filas con errores'}`);
+
     res.status(201).json({
-        mensaje: `Importación terminada: ${insertados} ${insertados === 1 ? 'gasto añadido' : 'gastos añadidos'}`,
+        mensaje: partes.join('. '),
         insertados,
-        omitidos: errores.length,
+        duplicados,
+        omitidos,
         errores,
+        erroresOmitidos: Math.max(0, omitidos - errores.length),
         categoriasCreadas
     });
 });
@@ -668,7 +996,26 @@ app.use((err, req, res, next) => {
 });
 
 cargarDatos().finally(() => {
-    app.listen(PORT, () => {
-        console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+    // OJO: el callback no se pasa a app.listen a propósito. Express 5 envuelve
+    // el último argumento con once() y lo registra también en 'error'
+    // (express/lib/application.js:601-604), así que con el puerto ocupado ese
+    // callback se ejecutaría con servidor.address() === null y reventaría con un
+    // TypeError en lugar de avisar. Por eso el aviso va en 'listening'.
+    const servidor = app.listen(PORT);
+
+    servidor.once('listening', () => {
+        console.log(`Servidor ejecutándose en http://localhost:${servidor.address().port}`);
+    });
+
+    servidor.on('error', (err) => {
+        if (err.code === 'EADDRINUSE') {
+            console.error(`El puerto ${PORT} ya está ocupado.`);
+            console.error('Si el servidor ya estaba arrancado, esto es normal: ciérralo o usa otro con PORT=3001 npm start');
+        } else if (err.code === 'EACCES') {
+            console.error(`No hay permiso para usar el puerto ${PORT}. Prueba con otro: PORT=3001 npm start`);
+        } else {
+            console.error('No se pudo arrancar el servidor:', err.message);
+        }
+        process.exit(1);
     });
 });

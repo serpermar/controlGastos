@@ -1,7 +1,8 @@
-/* Control de gastos - Hoja de estilos FinTech & Money UI */
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
+    color-scheme: light;
+
     /* Paleta Monetaria / FinTech */
     --cg-primary: #059669;
     /* Verde Dinero Esmeralda */
@@ -9,23 +10,42 @@
     /* Esmeralda Oscuro */
     --cg-primary-light: #ecfdf5;
     /* Fondo Verde Suave */
+    --cg-primary-borde: #34d399;
     --cg-header-bg: #0f172a;
     /* Azul Oscuro Pizarra / Financiero */
     --cg-acento: #f59e0b;
     /* Naranja / Ámbar Alerta Presupuesto */
-    --cg-peligro: #ef4444;
+    --cg-acento-tenue: #fffbeb;
+    --cg-acento-borde: #fef3c7;
+    /* El rojo va más oscuro que en la paleta habitual (#ef4444 daba 3,7:1 sobre
+       blanco, por debajo del 4,5:1 que pide WCAG para texto normal) */
+    --cg-peligro: #c81e1e;
     /* Rojo Gastos / Alerta Exceso */
-    --cg-peligro-hover: #dc2626;
+    --cg-peligro-hover: #a01a1a;
+    --cg-peligro-tenue: #fef2f2;
+    --cg-peligro-borde: #d95f5f;
     --cg-fondo: #f8fafc;
     /* Gris Pizarra Claro */
     --cg-panel: #ffffff;
+    /* Estado hover de superficies: botones, filas, barras */
+    --cg-tenue: #f1f5f9;
     --cg-texto: #1e293b;
     /* Pizarra Oscuro */
     --cg-texto-suave: #64748b;
-    /* Pizarra Medio */
+    /* Texto de las etiquetas de categoría */
+    --cg-etiqueta-fg: #334155;
+    /* Texto blanco sobre fondos oscuros */
+    --cg-inverso: #ffffff;
     --cg-borde: #e2e8f0;
     /* Borde Fino */
     --cg-borde-fuerte: #cbd5e1;
+    --cg-foco: rgba(5, 150, 105, 0.15);
+    --cg-cabecera-sub: #94a3b8;
+    --cg-aviso-fondo: #0f172a;
+
+    /* Esqueleto de carga */
+    --cg-esqueleto: #e2e8f0;
+    --cg-esqueleto-brillo: #f8fafc;
 
     /* Tipografías */
     --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
@@ -38,6 +58,86 @@
     --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
     --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
     --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+}
+
+/* --- MODO OSCURO ---
+   La paleta oscura se declara dos veces a propósito: una para cuando el sistema
+   ya va en oscuro y otra para cuando el usuario elige oscuro a mano. Si cambias
+   estos valores, cámbialos en los dos sitios. */
+
+@media (prefers-color-scheme: dark) {
+
+    :root:not([data-tema='claro']) {
+        color-scheme: dark;
+
+        --cg-primary: #10b981;
+        --cg-primary-hover: #34d399;
+        --cg-primary-light: #0f2f26;
+--cg-primary-borde: #059669;
+    --cg-header-bg: #0a0f1c;
+        --cg-acento: #fbbf24;
+        --cg-acento-tenue: #2b2110;
+        --cg-acento-borde: #553c11;
+        --cg-peligro: #f87171;
+        --cg-peligro-hover: #ef4444;
+        --cg-peligro-tenue: #2d1518;
+        --cg-peligro-borde: #dc2626;
+        --cg-fondo: #0b1220;
+        --cg-panel: #141d30;
+        --cg-tenue: #1c2740;
+        --cg-texto: #e6edf7;
+        --cg-texto-suave: #94a3b8;
+        --cg-etiqueta-fg: #cbd5e1;
+        --cg-inverso: #ffffff;
+        --cg-borde: #26334d;
+        --cg-borde-fuerte: #3a4a6b;
+        --cg-foco: rgba(16, 185, 129, 0.25);
+        --cg-cabecera-sub: #94a3b8;
+        --cg-aviso-fondo: #1e293b;
+
+        --cg-esqueleto: #26334d;
+        --cg-esqueleto-brillo: #3a4a6b;
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+    }
+}
+
+:root[data-tema='oscuro'] {
+    color-scheme: dark;
+
+    --cg-primary: #10b981;
+    --cg-primary-hover: #34d399;
+    --cg-primary-light: #0f2f26;
+    --cg-primary-borde: #059669;
+    --cg-header-bg: #0a0f1c;
+    --cg-acento: #fbbf24;
+    --cg-acento-tenue: #2b2110;
+    --cg-acento-borde: #553c11;
+    --cg-peligro: #f87171;
+    --cg-peligro-hover: #ef4444;
+    --cg-peligro-tenue: #2d1518;
+    --cg-peligro-borde: #dc2626;
+    --cg-fondo: #0b1220;
+    --cg-panel: #141d30;
+    --cg-tenue: #1c2740;
+    --cg-texto: #e6edf7;
+    --cg-texto-suave: #94a3b8;
+    --cg-etiqueta-fg: #cbd5e1;
+    --cg-inverso: #ffffff;
+    --cg-borde: #26334d;
+    --cg-borde-fuerte: #3a4a6b;
+    --cg-foco: rgba(16, 185, 129, 0.25);
+    --cg-cabecera-sub: #94a3b8;
+    --cg-aviso-fondo: #1e293b;
+
+    --cg-esqueleto: #26334d;
+    --cg-esqueleto-brillo: #3a4a6b;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
 }
 
 * {
@@ -55,12 +155,44 @@ body {
 
 /* --- CABECERA --- */
 .cabecera {
-    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
-    color: #ffffff;
+    background: linear-gradient(135deg, var(--cg-header-bg) 0%, var(--cg-header-bg) 55%, #1e293b 100%);
+    color: var(--cg-inverso);
     padding: 2.2rem 1rem;
     text-align: center;
     border-bottom: 3px solid var(--cg-primary);
     box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+/* Botón de tema claro/oscuro, anclado en la esquina de la cabecera */
+.btn-tema {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--cg-inverso);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-tema:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: scale(1.06);
+}
+
+.btn-tema:focus-visible {
+    outline: 2px solid var(--cg-acento);
+    outline-offset: 2px;
 }
 
 .cabecera h1 {
@@ -82,8 +214,59 @@ body {
 .subtitulo {
     margin: 0.5rem 0 0;
     font-size: 0.88rem;
-    color: #94a3b8;
+    color: var(--cg-cabecera-sub);
     font-weight: 500;
+}
+
+/* --- ESQUELETOS DE CARGA --- */
+/* Filas grises mientras la API responde. Sin animation si el sistema pide
+   menos movimiento: se ven estáticos pero no molestan. */
+.skeleton {
+    display: block;
+    height: 0.85rem;
+    border-radius: 5px;
+    background-color: var(--cg-esqueleto);
+    background-image: linear-gradient(90deg,
+            transparent 0%,
+            var(--cg-esqueleto-brillo) 50%,
+            transparent 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeleton-brillo 1.3s ease-in-out infinite;
+}
+
+.skeleton-corto {
+    width: 70%;
+}
+
+.skeleton-medio {
+    width: 90%;
+}
+
+.skeleton-largo {
+    width: 100%;
+}
+
+@keyframes skeleton-brillo {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .skeleton {
+        animation: none;
+        background-image: none;
+    }
+
+    .barra-relleno {
+        transition: none;
+    }
 }
 
 /* --- ESTRUCTURA --- */
@@ -152,7 +335,7 @@ body {
 }
 
 .tarjeta-resumen {
-    background: #ffffff;
+    background-color: var(--cg-panel);
     border: 1px solid var(--cg-borde);
     border-radius: var(--radius-md);
     padding: 1.1rem 1.25rem;
@@ -202,7 +385,7 @@ body {
 
 .barra {
     height: 10px;
-    background-color: #f1f5f9;
+    background-color: var(--cg-tenue);
     border-radius: 999px;
     overflow: hidden;
     margin: 0.6rem 0 0.3rem;
@@ -254,7 +437,7 @@ textarea {
     font-family: inherit;
     font-size: 0.92rem;
     color: var(--cg-texto);
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
     transition: all 0.2s ease;
 }
 
@@ -269,15 +452,15 @@ select:focus,
 textarea:focus {
     outline: none;
     border-color: var(--cg-primary);
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.15);
+    box-shadow: 0 0 0 3px var(--cg-foco);
 }
 
 .mensaje-error {
     margin: 0 0 0.85rem;
     padding: 0.65rem 0.85rem;
-    background-color: #fef2f2;
+    background-color: var(--cg-peligro-tenue);
     color: var(--cg-peligro);
-    border: 1px solid #fecaca;
+    border: 1px solid var(--cg-peligro-borde);
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
     font-weight: 500;
@@ -307,7 +490,7 @@ textarea:focus {
 
 .btn-primario {
     background-color: var(--cg-primary);
-    color: #ffffff;
+    color: var(--cg-inverso);
     box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
 }
 
@@ -317,24 +500,24 @@ textarea:focus {
 }
 
 .btn-secundario {
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
     color: var(--cg-texto);
     border-color: var(--cg-borde);
 }
 
 .btn-secundario:hover {
-    background-color: #f1f5f9;
+    background-color: var(--cg-tenue);
     border-color: var(--cg-borde-fuerte);
 }
 
 .btn-peligro {
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
     color: var(--cg-peligro);
-    border-color: #fecaca;
+    border-color: var(--cg-peligro-borde);
 }
 
 .btn-peligro:hover {
-    background-color: #fef2f2;
+    background-color: var(--cg-peligro-tenue);
     border-color: var(--cg-peligro);
 }
 
@@ -346,7 +529,7 @@ textarea:focus {
 }
 
 .btn-icono {
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
     border: 1px solid var(--cg-borde);
     border-radius: 6px;
     padding: 0.3rem 0.6rem;
@@ -363,7 +546,7 @@ textarea:focus {
 }
 
 .btn-icono.borrar:hover {
-    background-color: #fef2f2;
+    background-color: var(--cg-peligro-tenue);
     color: var(--cg-peligro);
     border-color: var(--cg-peligro);
 }
@@ -374,7 +557,7 @@ textarea:focus {
     flex-wrap: wrap;
     gap: 0.6rem;
     margin-bottom: 1.2rem;
-    background-color: #f8fafc;
+    background-color: var(--cg-fondo);
     padding: 0.85rem;
     border-radius: var(--radius-md);
     border: 1px solid var(--cg-borde);
@@ -383,7 +566,7 @@ textarea:focus {
 .filtros input,
 .filtros select {
     flex: 1 1 150px;
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
 }
 
 .barra-herramientas {
@@ -411,11 +594,11 @@ textarea:focus {
     width: 100%;
     border-collapse: collapse;
     font-size: 0.88rem;
-    background-color: #ffffff;
+    background-color: var(--cg-panel);
 }
 
 .tabla thead th {
-    background-color: #f8fafc;
+    background-color: var(--cg-fondo);
     color: var(--cg-texto-suave);
     text-align: left;
     padding: 0.75rem 0.9rem;
@@ -438,7 +621,7 @@ textarea:focus {
 }
 
 .tabla tbody tr:hover {
-    background-color: #f8fafc;
+    background-color: var(--cg-fondo);
 }
 
 .derecha {
@@ -474,8 +657,8 @@ textarea:focus {
     display: inline-block;
     padding: 0.2rem 0.6rem;
     border-radius: 999px;
-    background-color: #f1f5f9;
-    color: #334155;
+    background-color: var(--cg-tenue);
+    color: var(--cg-etiqueta-fg);
     font-size: 0.75rem;
     font-weight: 600;
     border: 1px solid var(--cg-borde);
@@ -519,6 +702,14 @@ textarea:focus {
     font-size: 0.82rem;
 }
 
+/* Aviso de que el mes está heredando el límite general */
+.presupuesto-nota {
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--cg-texto-suave);
+    font-style: italic;
+}
+
 /* --- CHIPS DE CATEGORÍAS --- */
 .chips {
     list-style: none;
@@ -536,14 +727,14 @@ textarea:focus {
     padding: 0.25rem 0.65rem;
     background-color: var(--cg-primary-light);
     color: var(--cg-primary-hover);
-    border: 1px solid #a7f3d0;
+    border: 1px solid var(--cg-primary-borde);
     border-radius: 999px;
     font-size: 0.78rem;
     font-weight: 600;
 }
 
 .chip.borrable {
-    background-color: #f1f5f9;
+    background-color: var(--cg-tenue);
     color: var(--cg-texto-suave);
     border-color: var(--cg-borde);
 }
@@ -577,8 +768,8 @@ textarea:focus {
     gap: 0.6rem;
     margin-bottom: 1rem;
     padding: 0.85rem 1rem;
-    background-color: #fffbeb;
-    border: 1px solid #fef3c7;
+    background-color: var(--cg-acento-tenue);
+    border: 1px solid var(--cg-acento-borde);
     border-left: 4px solid var(--cg-acento);
     border-radius: var(--radius-sm);
     font-size: 0.85rem;
@@ -629,8 +820,8 @@ textarea:focus {
     margin: 0;
     padding: 0.85rem 1.25rem;
     border-radius: var(--radius-md);
-    background-color: #0f172a;
-    color: #ffffff;
+    background-color: var(--cg-aviso-fondo);
+    color: var(--cg-inverso);
     font-size: 0.88rem;
     font-weight: 500;
     box-shadow: var(--shadow-lg);

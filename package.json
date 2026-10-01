@@ -1,10 +1,11 @@
 {
   "name": "control-gastos",
   "version": "1.0.0",
-  "description": "Web de control de gastos con CRUD sobre una API Express y datos en memoria (sin base de datos)",
+  "description": "Web de control de gastos con CRUD sobre una API Express y persistencia en un archivo JSON",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node --watch server.js"
   },
   "keywords": [],
   "author": "",
