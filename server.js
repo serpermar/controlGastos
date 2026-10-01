@@ -274,7 +274,7 @@ function sanearGastos(lista) {
 
         const importe = aNumero(bruto.importe);
         if (importe === null) motivos.push(`importe no numérico (${JSON.stringify(bruto.importe)})`);
-        else if (importe <= 0) motivos.push('importe menor o igual que 0');
+        else if (importe < 0) motivos.push('importe negativo');
         else if (importe > 100000) motivos.push('importe mayor que 100.000');
 
         const fecha = typeof bruto.fecha === 'string' ? bruto.fecha.trim() : '';
@@ -405,7 +405,7 @@ function validarGasto(datos, { permitirCrearCategoria = false } = {}) {
     if (notas.length > 140) errores.push("Las notas no pueden superar los 140 caracteres");
 
     if (importe === null) errores.push("El importe debe ser un número");
-    else if (importe <= 0) errores.push("El importe debe ser mayor que 0");
+    else if (importe < 0) errores.push("El importe no puede ser negativo");
     else if (importe > 100000) errores.push("El importe no puede superar los 100.000 €");
 
     if (!fecha) errores.push("La fecha es obligatoria");
