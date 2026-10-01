@@ -1,0 +1,1317 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+:root {
+    color-scheme: light;
+
+    /* Paleta Monetaria / FinTech */
+    --cg-primary: #059669;
+    /* Verde Dinero Esmeralda */
+    --cg-primary-hover: #047857;
+    /* Esmeralda Oscuro */
+    --cg-primary-light: #ecfdf5;
+    /* Fondo Verde Suave */
+    --cg-primary-borde: #34d399;
+    --cg-header-bg: #0f172a;
+    /* Azul Oscuro Pizarra / Financiero */
+    --cg-acento: #f59e0b;
+    /* Naranja / Ámbar Alerta Presupuesto */
+    --cg-acento-tenue: #fffbeb;
+    --cg-acento-borde: #fef3c7;
+    /* El rojo va más oscuro que en la paleta habitual (#ef4444 daba 3,7:1 sobre
+       blanco, por debajo del 4,5:1 que pide WCAG para texto normal) */
+    --cg-peligro: #c81e1e;
+    /* Rojo Gastos / Alerta Exceso */
+    --cg-peligro-hover: #a01a1a;
+    --cg-peligro-tenue: #fef2f2;
+    --cg-peligro-borde: #d95f5f;
+    --cg-fondo: #f8fafc;
+    /* Gris Pizarra Claro */
+    --cg-panel: #ffffff;
+    /* Estado hover de superficies: botones, filas, barras */
+    --cg-tenue: #f1f5f9;
+    --cg-texto: #1e293b;
+    /* Pizarra Oscuro */
+    --cg-texto-suave: #64748b;
+    /* Texto de las etiquetas de categoría */
+    --cg-etiqueta-fg: #334155;
+    /* Texto blanco sobre fondos oscuros */
+    --cg-inverso: #ffffff;
+    --cg-borde: #e2e8f0;
+    /* Borde Fino */
+    --cg-borde-fuerte: #cbd5e1;
+    --cg-foco: rgba(5, 150, 105, 0.15);
+    --cg-cabecera-sub: #94a3b8;
+    --cg-aviso-fondo: #0f172a;
+
+    /* Esqueleto de carga */
+    --cg-esqueleto: #e2e8f0;
+    --cg-esqueleto-brillo: #f8fafc;
+
+    /* Tipografías */
+    --font-main: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    --font-cifra: 'JetBrains Mono', monospace;
+
+    /* Sombras y Bordes */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(15, 23, 42, 0.06), 0 2px 4px -2px rgba(15, 23, 42, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(15, 23, 42, 0.08), 0 4px 6px -4px rgba(15, 23, 42, 0.04);
+}
+
+/* --- MODO OSCURO ---
+   La paleta oscura se declara dos veces a propósito: una para cuando el sistema
+   ya va en oscuro y otra para cuando el usuario elige oscuro a mano. Si cambias
+   estos valores, cámbialos en los dos sitios. */
+
+@media (prefers-color-scheme: dark) {
+
+    :root:not([data-tema='claro']) {
+        color-scheme: dark;
+
+        --cg-primary: #10b981;
+        --cg-primary-hover: #34d399;
+        --cg-primary-light: #0f2f26;
+--cg-primary-borde: #059669;
+    --cg-header-bg: #0a0f1c;
+        --cg-acento: #fbbf24;
+        --cg-acento-tenue: #2b2110;
+        --cg-acento-borde: #553c11;
+        --cg-peligro: #f87171;
+        --cg-peligro-hover: #ef4444;
+        --cg-peligro-tenue: #2d1518;
+        --cg-peligro-borde: #dc2626;
+        --cg-fondo: #0b1220;
+        --cg-panel: #141d30;
+        --cg-tenue: #1c2740;
+        --cg-texto: #e6edf7;
+        --cg-texto-suave: #94a3b8;
+        --cg-etiqueta-fg: #cbd5e1;
+        --cg-inverso: #ffffff;
+        --cg-borde: #26334d;
+        --cg-borde-fuerte: #3a4a6b;
+        --cg-foco: rgba(16, 185, 129, 0.25);
+        --cg-cabecera-sub: #94a3b8;
+        --cg-aviso-fondo: #1e293b;
+
+        --cg-esqueleto: #26334d;
+        --cg-esqueleto-brillo: #3a4a6b;
+
+        --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+        --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+        --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+    }
+}
+
+:root[data-tema='oscuro'] {
+    color-scheme: dark;
+
+    --cg-primary: #10b981;
+    --cg-primary-hover: #34d399;
+    --cg-primary-light: #0f2f26;
+    --cg-primary-borde: #059669;
+    --cg-header-bg: #0a0f1c;
+    --cg-acento: #fbbf24;
+    --cg-acento-tenue: #2b2110;
+    --cg-acento-borde: #553c11;
+    --cg-peligro: #f87171;
+    --cg-peligro-hover: #ef4444;
+    --cg-peligro-tenue: #2d1518;
+    --cg-peligro-borde: #dc2626;
+    --cg-fondo: #0b1220;
+    --cg-panel: #141d30;
+    --cg-tenue: #1c2740;
+    --cg-texto: #e6edf7;
+    --cg-texto-suave: #94a3b8;
+    --cg-etiqueta-fg: #cbd5e1;
+    --cg-inverso: #ffffff;
+    --cg-borde: #26334d;
+    --cg-borde-fuerte: #3a4a6b;
+    --cg-foco: rgba(16, 185, 129, 0.25);
+    --cg-cabecera-sub: #94a3b8;
+    --cg-aviso-fondo: #1e293b;
+
+    --cg-esqueleto: #26334d;
+    --cg-esqueleto-brillo: #3a4a6b;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.5);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: var(--font-main);
+    background-color: var(--cg-fondo);
+    color: var(--cg-texto);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    /* Todo el texto centrado de forma global. Más abajo se deshace en los
+       sitios donde centrado sí estorbaría: la tabla y los modales. */
+    text-align: center;
+}
+
+/* --- CABECERA --- */
+.cabecera {
+    background: linear-gradient(135deg, var(--cg-header-bg) 0%, var(--cg-header-bg) 55%, #1e293b 100%);
+    color: var(--cg-inverso);
+    padding: 2.2rem 1rem;
+    text-align: center;
+    border-bottom: 3px solid var(--cg-primary);
+    box-shadow: var(--shadow-md);
+    position: relative;
+}
+
+/* Botón de tema claro/oscuro, anclado en la esquina de la cabecera */
+.btn-tema {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    width: 2.4rem;
+    height: 2.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    line-height: 1;
+    cursor: pointer;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    background-color: rgba(255, 255, 255, 0.08);
+    color: var(--cg-inverso);
+    transition: background-color 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
+}
+
+.btn-tema:hover {
+    background-color: rgba(255, 255, 255, 0.18);
+    border-color: rgba(255, 255, 255, 0.35);
+    transform: scale(1.06);
+}
+
+.btn-tema:focus-visible {
+    outline: 2px solid var(--cg-acento);
+    outline-offset: 2px;
+}
+
+.cabecera h1 {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+}
+
+.cabecera h1::before {
+    content: "💳";
+    font-size: 1.8rem;
+}
+
+.subtitulo {
+    margin: 0.5rem 0 0;
+    font-size: 0.88rem;
+    color: var(--cg-cabecera-sub);
+    font-weight: 500;
+}
+
+/* --- ESQUELETOS DE CARGA --- */
+/* Filas grises mientras la API responde. Sin animation si el sistema pide
+   menos movimiento: se ven estáticos pero no molestan. */
+.skeleton {
+    display: block;
+    height: 0.85rem;
+    border-radius: 5px;
+    background-color: var(--cg-esqueleto);
+    background-image: linear-gradient(90deg,
+            transparent 0%,
+            var(--cg-esqueleto-brillo) 50%,
+            transparent 100%);
+    background-size: 200% 100%;
+    background-repeat: no-repeat;
+    animation: skeleton-brillo 1.3s ease-in-out infinite;
+}
+
+.skeleton-corto {
+    width: 70%;
+}
+
+.skeleton-medio {
+    width: 90%;
+}
+
+.skeleton-largo {
+    width: 100%;
+}
+
+@keyframes skeleton-brillo {
+    from {
+        background-position: 200% 0;
+    }
+
+    to {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    .skeleton {
+        animation: none;
+        background-image: none;
+    }
+
+    .barra-relleno {
+        transition: none;
+    }
+}
+
+/* --- ESTRUCTURA --- */
+.contenedor {
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 2rem 1.25rem 4rem;
+}
+
+/* minmax(0,...) en vez de 360px a secas: sin el 0, un input ancho de la
+   tarjeta de la izquierda ensancharía la columna y descuadraría la rejilla */
+.columnas {
+    display: grid;
+    grid-template-columns: minmax(0, 360px) minmax(0, 1fr);
+    justify-content: center;
+    gap: 1.5rem;
+    align-items: start;
+    margin-top: 1.5rem;
+}
+
+@media (max-width: 960px) {
+    .columnas {
+        /* minmax(0,...) y no 1fr a secas: el 1fr normal no baja del
+           min-content y los inputs seBURBANan la tarjeta en móvil */
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.panel {
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-lg);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-md);
+    transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.panel:hover {
+    box-shadow: var(--shadow-lg);
+    border-color: var(--cg-borde-fuerte);
+}
+
+.panel h2 {
+    margin: 0 0 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--cg-texto);
+    letter-spacing: -0.01em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* --- PANEL RESUMEN (TARJETAS MONETARIAS) --- */
+.resumen {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 0.9rem;
+    /* Menos aire que en los demás paneles: aquí lo que manda es la altura */
+    padding: 1.1rem;
+}
+
+@media (max-width: 960px) {
+    .resumen {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 580px) {
+    .resumen {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+.tarjeta-resumen {
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-md);
+    padding: 0.6rem 0.8rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    position: relative;
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+.tarjeta-resumen::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 3px;
+    height: 100%;
+    background-color: var(--cg-primary);
+}
+
+.tarjeta-resumen.presupuesto::before {
+    background-color: var(--cg-acento);
+}
+
+.etiqueta {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cg-texto-suave);
+}
+
+.valor {
+    font-family: var(--font-cifra);
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--cg-texto);
+    letter-spacing: -0.03em;
+}
+
+.detalle {
+    font-size: 0.74rem;
+    font-weight: 500;
+    color: var(--cg-texto-suave);
+}
+
+.barra {
+    height: 8px;
+    background-color: var(--cg-tenue);
+    border-radius: 999px;
+    overflow: hidden;
+    margin: 0.45rem 0 0.25rem;
+}
+
+.barra-relleno {
+    height: 100%;
+    width: 0;
+    background: linear-gradient(90deg, #10b981 0%, var(--cg-primary) 100%);
+    border-radius: 999px;
+    transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.3s ease;
+}
+
+.barra-relleno.aviso {
+    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
+}
+
+.barra-relleno.excedido {
+    background: linear-gradient(90deg, #ef4444 0%, #dc2626 100%);
+}
+
+/* --- FORMULARIOS --- */
+.campo {
+    margin-bottom: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.35rem;
+    width: 100%;
+}
+
+.campo label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: var(--cg-texto);
+}
+
+/* minmax(0, 1fr) y no 1fr: ver la nota en la media query de .columnas */
+.fila {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    gap: 0.85rem;
+}
+
+input,
+select,
+textarea {
+    width: 100%;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.92rem;
+    color: var(--cg-texto);
+    background-color: var(--cg-panel);
+    /* El navegador pone text-align: start en los campos, que gana a la herencia
+       de body. Hay que fijarlo aquí para que también salga centrado */
+    text-align: center;
+    transition: all 0.2s ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+    border-color: var(--cg-borde-fuerte);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: var(--cg-primary);
+    box-shadow: 0 0 0 3px var(--cg-foco);
+}
+
+.mensaje-error {
+    margin: 0 0 0.85rem;
+    padding: 0.65rem 0.85rem;
+    background-color: var(--cg-peligro-tenue);
+    color: var(--cg-peligro);
+    border: 1px solid var(--cg-peligro-borde);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* --- BOTONES --- */
+.acciones {
+    display: flex;
+    justify-content: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+}
+
+.btn {
+    padding: 0.65rem 1.1rem;
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+    font-family: inherit;
+    font-size: 0.88rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.btn-primario {
+    background-color: var(--cg-primary);
+    color: var(--cg-inverso);
+    box-shadow: 0 1px 2px rgba(5, 150, 105, 0.2);
+}
+
+.btn-primario:hover {
+    background-color: var(--cg-primary-hover);
+    box-shadow: 0 4px 8px rgba(5, 150, 105, 0.3);
+}
+
+.btn-secundario {
+    background-color: var(--cg-panel);
+    color: var(--cg-texto);
+    border-color: var(--cg-borde);
+}
+
+.btn-secundario:hover {
+    background-color: var(--cg-tenue);
+    border-color: var(--cg-borde-fuerte);
+}
+
+.btn-peligro {
+    background-color: var(--cg-panel);
+    color: var(--cg-peligro);
+    border-color: var(--cg-peligro-borde);
+}
+
+.btn-peligro:hover {
+    background-color: var(--cg-peligro-tenue);
+    border-color: var(--cg-peligro);
+}
+
+.btn:disabled,
+.btn-icono:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+.btn-icono {
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-borde);
+    border-radius: 6px;
+    padding: 0.3rem 0.6rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    color: var(--cg-texto-suave);
+    transition: all 0.15s ease;
+}
+
+.btn-icono:hover {
+    background-color: var(--cg-primary-light);
+    color: var(--cg-primary-hover);
+    border-color: var(--cg-primary);
+}
+
+.btn-icono.borrar:hover {
+    background-color: var(--cg-peligro-tenue);
+    color: var(--cg-peligro);
+    border-color: var(--cg-peligro);
+}
+
+/* --- FILTROS & BARRA DE HERRAMIENTAS ---
+   El bloque va en dos grupos: qué se busca (texto, categoría) y sobre qué
+   periodo. Cada control lleva <label> visible: antes solo había title, que no
+   se ve en móvil y no lo lee el lector de pantalla. */
+.filtros {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.85rem 1.5rem;
+    margin-bottom: 0.9rem;
+    background-color: var(--cg-fondo);
+    padding: 0.9rem 1rem;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cg-borde);
+}
+
+.grupo-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: center;
+    gap: 0.6rem 0.75rem;
+    flex: 1 1 340px;
+}
+
+.grupo-filtros.periodo {
+    flex: 1 1 420px;
+}
+
+.campo-filtro {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.campo-filtro.crece {
+    flex: 1 1 200px;
+}
+
+/* Los dos campos del rango comparten sitio: cada uno se queda la mitad */
+.campo-filtro.rango {
+    flex: 1 1 130px;
+}
+
+.campo-filtro label,
+.campo-filtro .etiqueta-periodo {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cg-texto-suave);
+}
+
+.campo-filtro input,
+.campo-filtro select {
+    padding: 0.45rem 0.6rem;
+    font-size: 0.85rem;
+}
+
+.campo-filtro.compacto {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 0.45rem;
+}
+
+.campo-filtro.compacto select {
+    padding: 0.35rem 0.5rem;
+    font-size: 0.82rem;
+}
+
+/* Selector de Mes / Rango: los dos botones emparejados, el activo hundido */
+.segmentado {
+    display: inline-flex;
+    padding: 2px;
+    gap: 2px;
+    background-color: var(--cg-tenue);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-sm);
+}
+
+.segmento {
+    padding: 0.4rem 0.9rem;
+    border: none;
+    border-radius: 6px;
+    background: none;
+    color: var(--cg-texto-suave);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.segmento:hover {
+    color: var(--cg-texto);
+}
+
+.segmento.activo {
+    background-color: var(--cg-panel);
+    color: var(--cg-primary-hover);
+    box-shadow: var(--shadow-sm);
+}
+
+.segmento:focus-visible {
+    outline: 2px solid var(--cg-acento);
+    outline-offset: 1px;
+}
+
+/* --- FILTROS ACTIVOS (chips) --- */
+.filtros-activos {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 0.9rem;
+    padding: 0.6rem 0.85rem;
+    background-color: var(--cg-primary-light);
+    border: 1px solid var(--cg-primary-borde);
+    border-radius: var(--radius-md);
+}
+
+.filtros-activos-titulo {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cg-primary-hover);
+}
+
+.chips-filtros {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+    flex: 1 1 auto;
+}
+
+.chip-filtro {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.2rem 0.4rem 0.2rem 0.65rem;
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-primary-borde);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--cg-texto);
+    text-align: left;
+}
+
+.chip-filtro b {
+    font-weight: 600;
+    color: var(--cg-texto-suave);
+}
+
+/* La cruz de quitar va dentro del propio chip para no manejar dos elementos */
+.chip-filtro button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.15rem;
+    height: 1.15rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--cg-texto-suave);
+    font-family: inherit;
+    font-size: 0.95rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.chip-filtro button:hover {
+    background-color: var(--cg-peligro-tenue);
+    color: var(--cg-peligro);
+}
+
+.chip-filtro button:focus-visible {
+    outline: 2px solid var(--cg-acento);
+    outline-offset: 1px;
+}
+
+.filtros-activos .btn {
+    padding: 0.35rem 0.7rem;
+    font-size: 0.78rem;
+}
+
+/* --- BARRA DE ACCIONES (vista + datos) ---
+   Dos grupos con nombre: "Ver" agrupa lo que solo cambia la vista y "Exportar /
+   Importar" lo que toca los datos. Antes todo vivía en la misma fila sin
+   distinguir, con "Vaciar todo" pegado a los botones inofensivos. */
+.barra-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem 1rem;
+    margin-bottom: 0.35rem;
+    padding-bottom: 0.85rem;
+    border-bottom: 1px solid var(--cg-borde);
+}
+
+.grupo-vista,
+.grupo-acciones {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem 0.9rem;
+}
+
+/* "Ver" queda atenuado para que se lea como secundario frente a las acciones */
+.grupo-titulo {
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--cg-texto-suave);
+    padding-right: 0.15rem;
+}
+
+/* Separador vertical: distancia lo destructivo del resto de acciones */
+.separador-acciones {
+    width: 1px;
+    align-self: stretch;
+    min-height: 1.6rem;
+    margin: 0 0.15rem;
+    background-color: var(--cg-borde-fuerte);
+}
+
+.nota-acciones {
+    margin: 0 0 1rem;
+    font-size: 0.74rem;
+    color: var(--cg-texto-suave);
+}
+
+/* Botones de acción más bajos que los del formulario, para no engordar la barra */
+.grupo-acciones .btn,
+.menu > summary {
+    padding: 0.45rem 0.85rem;
+    font-size: 0.82rem;
+}
+
+/* --- MENÚ DESPLEGABLE (exportar) --- */
+.menu {
+    position: relative;
+}
+
+.menu > summary {
+    list-style: none;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* El triángulo del summary no deja quitarlo con appearance en Firefox */
+.menu > summary::-webkit-details-marker {
+    display: none;
+}
+
+.menu[open] > summary {
+    border-color: var(--cg-borde-fuerte);
+    background-color: var(--cg-tenue);
+}
+
+.menu-lista {
+    position: absolute;
+    top: calc(100% + 0.35rem);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    flex-direction: column;
+    min-width: 220px;
+    padding: 0.3rem;
+    background-color: var(--cg-panel);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lg);
+}
+
+.menu-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.5rem 0.65rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--cg-texto);
+    font-family: inherit;
+    text-align: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.menu-item:hover,
+.menu-item:focus-visible {
+    background-color: var(--cg-primary-light);
+}
+
+.menu-item:focus-visible {
+    outline: 2px solid var(--cg-acento);
+    outline-offset: -2px;
+}
+
+.menu-item-titulo {
+    font-size: 0.85rem;
+    font-weight: 700;
+}
+
+.menu-item-nota {
+    font-size: 0.72rem;
+    color: var(--cg-texto-suave);
+}
+
+/* --- TABLA DE GASTOS --- */
+.tabla-envoltorio {
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--cg-borde);
+}
+
+.tabla {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    background-color: var(--cg-panel);
+}
+
+.tabla thead th {
+    background-color: var(--cg-fondo);
+    color: var(--cg-texto-suave);
+    text-align: center;
+    padding: 0.75rem 0.9rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    border-bottom: 1px solid var(--cg-borde);
+    white-space: nowrap;
+}
+
+.tabla tbody td {
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid var(--cg-borde);
+    vertical-align: middle;
+}
+
+.tabla tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.tabla tbody tr:hover {
+    background-color: var(--cg-fondo);
+}
+
+/* La columna de importes y la de acciones ya heredan el centrado global:
+   las clases que las alineaban a la derecha se quitaron por eso */
+
+.importe {
+    font-family: var(--font-cifra);
+    font-weight: 700;
+    font-size: 0.95rem;
+    color: var(--cg-texto);
+    white-space: nowrap;
+}
+
+.concepto {
+    font-weight: 600;
+    color: var(--cg-texto);
+}
+
+.notas {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--cg-texto-suave);
+    font-weight: 400;
+    margin-top: 0.1rem;
+}
+
+.tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    background-color: var(--cg-tenue);
+    color: var(--cg-etiqueta-fg);
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid var(--cg-borde);
+    white-space: nowrap;
+}
+
+.vacio {
+    margin: 2rem 0 1rem;
+    text-align: center;
+    color: var(--cg-texto-suave);
+    font-weight: 500;
+}
+
+/* --- PRESUPUESTO EDITABLE --- */
+.formulario-presupuesto {
+    margin-top: 0.6rem;
+    padding-top: 0.55rem;
+    border-top: 1px dashed var(--cg-borde);
+}
+
+.formulario-presupuesto label {
+    display: block;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--cg-texto-suave);
+    margin-bottom: 0.25rem;
+}
+
+/* El par input + botón se centra como un bloque en vez de repartir la tarjeta:
+   con 1fr + auto el botón quedaba clavado en el extremo derecho */
+.formulario-presupuesto .fila {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+.formulario-presupuesto input {
+    flex: 0 1 150px;
+    padding: 0.3rem 0.55rem;
+    font-size: 0.82rem;
+}
+
+.formulario-presupuesto .btn {
+    padding: 0.3rem 0.7rem;
+    font-size: 0.8rem;
+}
+
+/* Aviso de que el mes está heredando el límite general */
+.presupuesto-nota {
+    margin-top: 0.35rem;
+    font-size: 0.72rem;
+    color: var(--cg-texto-suave);
+    font-style: italic;
+}
+
+/* --- CHIPS DE CATEGORÍAS --- */
+.chips {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.4rem;
+    margin: 0.8rem 0 0;
+    padding: 0;
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    background-color: var(--cg-primary-light);
+    color: var(--cg-primary-hover);
+    border: 1px solid var(--cg-primary-borde);
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+}
+
+.chip.borrable {
+    background-color: var(--cg-tenue);
+    color: var(--cg-texto-suave);
+    border-color: var(--cg-borde);
+}
+
+.chip button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--cg-peligro);
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0 0.1rem;
+    border-radius: 50%;
+}
+
+.nueva-categoria {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+}
+
+.nueva-categoria input {
+    flex: 0 1 220px;
+    padding: 0.45rem 0.65rem;
+}
+
+/* --- CONFIRMACIÓN EN DOS PASOS --- */
+.confirmacion {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+    padding: 0.85rem 1rem;
+    background-color: var(--cg-acento-tenue);
+    border: 1px solid var(--cg-acento-borde);
+    border-left: 4px solid var(--cg-acento);
+    border-radius: var(--radius-sm);
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+/* --- MODALES (edición y borrado de una fila) ---
+   Se usan <dialog> nativos: showModal() ya se encarga del fondo oscurecido, de
+   atrapar el foco dentro del modal y de cerrarlo con la tecla Escape. */
+.modal[open] {
+    display: flex;
+    flex-direction: column;
+    width: min(560px, calc(100vw - 2rem));
+    /* Con max-height y no con height, el modal ocupa solo lo que necesita */
+    max-height: calc(100vh - 3rem);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-lg);
+    background-color: var(--cg-panel);
+    color: var(--cg-texto);
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+}
+
+.modal-borrar[open] {
+    width: min(460px, calc(100vw - 2rem));
+}
+
+.modal::backdrop {
+    background-color: rgba(15, 23, 42, 0.55);
+}
+
+.modal > form {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+}
+
+.modal-cabecera {
+    flex: none;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background-color: var(--cg-fondo);
+    border-bottom: 1px solid var(--cg-borde);
+}
+
+.modal-cabecera h2 {
+    margin: 0;
+    /* Hueco para la cruz, que va anclada al borde y no se solapa con el título */
+    padding: 0 1.9rem;
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.modal-borrar .modal-cabecera {
+    background-color: var(--cg-peligro-tenue);
+    border-bottom-color: var(--cg-peligro-borde);
+}
+
+.modal-borrar .modal-cabecera h2 {
+    color: var(--cg-peligro);
+}
+
+.modal-cerrar {
+    flex: none;
+    position: absolute;
+    top: 50%;
+    right: 0.75rem;
+    transform: translateY(-50%);
+    padding: 0.1rem 0.45rem;
+    border: none;
+    border-radius: var(--radius-sm);
+    background: none;
+    color: var(--cg-texto-suave);
+    font-family: inherit;
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.modal-cerrar:hover {
+    background-color: var(--cg-tenue);
+    color: var(--cg-texto);
+}
+
+/* El cuerpo es lo único que se desplaza si el modal no cabe en pantalla */
+.modal-cuerpo {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding: 1.25rem 1.5rem 0.5rem;
+}
+
+.modal-cuerpo .campo:last-of-type {
+    margin-bottom: 0;
+}
+
+.modal-texto {
+    margin: 0 0 1rem;
+    font-size: 0.9rem;
+    color: var(--cg-texto-suave);
+}
+
+.modal-datos {
+    display: grid;
+    grid-template-columns: auto auto;
+    justify-content: center;
+    gap: 0.45rem 1rem;
+    margin: 0 0 0.75rem;
+    padding: 0.9rem 1rem;
+    background-color: var(--cg-fondo);
+    border: 1px solid var(--cg-borde);
+    border-radius: var(--radius-md);
+    font-size: 0.88rem;
+}
+
+.modal-datos dt {
+    color: var(--cg-texto-suave);
+    font-weight: 600;
+}
+
+.modal-datos dd {
+    margin: 0;
+    font-weight: 500;
+    /* Un concepto largo no debe romper la rejilla del modal */
+    overflow-wrap: anywhere;
+}
+
+.modal-datos .importe {
+    font-family: var(--font-cifra);
+    font-weight: 700;
+}
+
+.modal-pie {
+    flex: none;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.6rem;
+    padding: 1rem 1.5rem;
+    border-top: 1px solid var(--cg-borde);
+}
+
+@keyframes modal-entra {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.modal[open] {
+    animation: modal-entra 0.18s ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .modal[open] {
+        animation: none;
+    }
+}
+
+/* --- PAGINACIÓN --- */
+/* En columna para que el texto y los botones queden centrados cada uno por su
+   cuenta: en fila, centrado el conjunto, los dos seemed descentrados entre sí */
+.paginacion {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--cg-borde);
+}
+
+.paginacion-info {
+    font-size: 0.82rem;
+    color: var(--cg-texto-suave);
+    font-weight: 500;
+}
+
+.paginacion-botones {
+    display: flex;
+    justify-content: center;
+    gap: 0.4rem;
+}
+
+/* --- GRÁFICOS --- */
+.graficos {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1.5rem;
+}
+
+.lienzo {
+    position: relative;
+    height: 280px;
+}
+
+/* --- AVISO GLOBAL --- */
+.aviso {
+    position: fixed;
+    left: 50%;
+    bottom: 1.5rem;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 0.85rem 1.25rem;
+    border-radius: var(--radius-md);
+    background-color: var(--cg-aviso-fondo);
+    color: var(--cg-inverso);
+    font-size: 0.88rem;
+    font-weight: 500;
+    box-shadow: var(--shadow-lg);
+    max-width: min(360px, calc(100vw - 2rem));
+    z-index: 100;
+    border-left: 4px solid var(--cg-primary);
+}
+
+.aviso.error {
+    border-left-color: var(--cg-peligro);
+}
+
+.separador {
+    border: none;
+    border-top: 1px solid var(--cg-borde);
+    margin: 1.5rem 0;
+}
